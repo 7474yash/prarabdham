@@ -125,31 +125,67 @@ export function buildLagnaReading(lagna, planets, planetHouses = {}) {
  * @param {object}   planets       - Full planet data
  * @returns {string}
  */
+// Planet quality descriptors for aspect woven prose
+const ASPECT_QUALITY = {
+  Sun:     'clarity of self-direction and authority into',
+  Moon:    'emotional sensitivity and the quality of inner nourishment into',
+  Mars:    'drive, energy, and the push toward action into',
+  Mercury: 'analytical intelligence and discriminating awareness into',
+  Jupiter: 'wisdom, grace, and the principle of meaningful expansion into',
+  Venus:   'relational sensitivity and the refinement of values into',
+  Saturn:  'discipline, structure, and patient long-term effort into',
+  Rahu:    'amplified desire and an unusual or intensified quality into',
+  Ketu:    'a quality of detachment and past-life completion into',
+};
+
+// House domain phrases for woven aspect sentences
+const HOUSE_DOMAIN = {
+  1:'the self and outward expression', 2:'speech, family roots, and accumulated resources',
+  3:'effort, courage, and immediate environment', 4:'home, mother, and the quality of inner life',
+  5:'intelligence, creativity, and past merit', 6:'obstacles, service, and the capacity to overcome',
+  7:'partnership and the principle of meeting the other', 8:'transformation, depth, and what is hidden',
+  9:'dharma, wisdom, and the relationship with the teacher', 10:'career, public life, and conscious action',
+  11:'gains, networks, and the fulfilment of aspirations', 12:'liberation, solitude, and release',
+};
+
 export function buildHouseReading(houseNumber, sign, occupants, aspects, lordPlacement, planets = {}) {
   const parts = [];
+  const lord = SIGN_LORD[sign];
 
-  // Lord context
-  parts.push(`The ${ordinal(houseNumber)} house carries ${sign} — ruled by ${SIGN_LORD[sign]}${lordPlacement ? ', placed ' + lordPlacement : ''}.`);
-
-  // Occupants
+  // Occupied house: lord + each planet + aspects woven in
   if (occupants.length > 0) {
+    parts.push(`The ${ordinal(houseNumber)} house carries ${sign} — ruled by ${lord}${lordPlacement ? ', placed ' + lordPlacement : ''}.`);
     for (const occ of occupants) {
       const pData   = planets[occ] || {};
       const dignity = pData.dignity ? ` (${pData.dignity})` : '';
       const retro   = pData.isRetrograde ? ' retrograde' : '';
-      const content = CONTENT.planetInHouse?.[occ]?.[houseNumber]
+      const pcontent = CONTENT.planetInHouse?.[occ]?.[houseNumber]
         || `PLACEHOLDER: ${occ} in ${ordinal(houseNumber)} house content not yet written.`;
-      parts.push(`${occ}${retro}${dignity} is placed here. ${content}`);
+      parts.push(`${occ}${retro}${dignity} is placed here. ${pcontent}`);
     }
+    if (aspects.length > 0) {
+      const aspNames = aspects.map(a => `${a.planet} (${a.aspectType} from H${a.fromHouse})`).join(', ');
+      parts.push(`This house also receives the aspect of ${aspNames}.`);
+    }
+    return parts.join(' ');
   }
 
-  // Aspects
-  if (aspects.length > 0) {
-    const aspNames = aspects.map(a => `${a.planet} (${a.aspectType} from H${a.fromHouse})`).join(', ');
-    parts.push(`This house receives the aspect of: ${aspNames}.`);
+  // Empty house with no aspects: brief single sentence
+  if (aspects.length === 0) {
+    return `The ${ordinal(houseNumber)} house carries ${sign} — ruled by ${lord}${lordPlacement ? ', placed ' + lordPlacement : ''}, directing its influence on ${HOUSE_DOMAIN[houseNumber] || 'this life domain'} from that placement.`;
   }
 
-  return parts.join(' ');
+  // Empty house WITH aspects: one woven sentence
+  const aspClauses = aspects.map(a => {
+    const quality = ASPECT_QUALITY[a.planet] || `${a.planet}'s quality into`;
+    return `${a.planet}'s ${a.aspectType} from the ${ordinal(a.fromHouse)} house brings ${quality} ${HOUSE_DOMAIN[houseNumber] || 'this domain'}`;
+  });
+
+  const aspText = aspClauses.length === 1
+    ? aspClauses[0]
+    : aspClauses.slice(0,-1).join('; ') + '; and ' + aspClauses[aspClauses.length-1];
+
+  return `The ${ordinal(houseNumber)} house carries ${sign} — ruled by ${lord}${lordPlacement ? ', placed ' + lordPlacement : ''}, anchoring ${HOUSE_DOMAIN[houseNumber] || 'this domain'} there. ${aspText.charAt(0).toUpperCase() + aspText.slice(1)}.`;
 }
 
 // ---------------------------------------------------------------------------

@@ -229,17 +229,156 @@ function renderHouseList(houseReadings, planets) {
       const retro = planets[o]?.isRetrograde;
       return `<span class="hp-badge${retro?' retro':''}">${ABBR[o]||o}${retro?'℞':''}</span>`;
     }).join('');
-    const aspStr = h.aspects.length
-      ? `<div style="font-size:.72rem;color:var(--text-3);font-family:var(--font-mono);margin-top:.5rem">Aspects: ${h.aspects.map(a=>`${a.planet}(${a.aspectType})`).join(' · ')}</div>` : '';
     return `<div class="house-item">
       <div class="house-item-head">
         <span class="house-num-badge">H${h.houseNumber}</span>
         <span class="house-sign-label">${h.sign}</span>
         <div class="house-planets">${badges}</div>
       </div>
-      <div class="house-item-body">${renderText(h.reading)}${aspStr}</div>
+      <div class="house-item-body">${renderText(h.reading)}</div>
     </div>`;
   }).join('');
+}
+
+// ---------------------------------------------------------------------------
+// Divisional Chart Readings
+// ---------------------------------------------------------------------------
+
+/**
+ * Generate written readings for D9 and other Mukhya Varga charts.
+ * Uses varga data already computed by getAllVargaCharts().
+ */
+function renderVargaReadings(varga, lagna, planets, planetHouses) {
+  const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo',
+    'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
+  const SIGN_LORD_MAP = {
+    Aries:'Mars',Taurus:'Venus',Gemini:'Mercury',Cancer:'Moon',
+    Leo:'Sun',Virgo:'Mercury',Libra:'Venus',Scorpio:'Mars',
+    Sagittarius:'Jupiter',Capricorn:'Saturn',Aquarius:'Saturn',Pisces:'Jupiter'
+  };
+  const NAK_SPAN = 360/27;
+
+  // Helper: get sign from varga position
+  function getSign(pos) { return pos?.sign || '—'; }
+
+  // Helper: find lagna sign in a varga chart (Lagna key)
+  function getVargaLagna(key) {
+    return varga[key]?.Lagna?.sign || '—';
+  }
+
+  // Helper: find which sign a planet occupies in a varga chart
+  function getPlanetSign(key, planet) {
+    return varga[key]?.[planet]?.sign || '—';
+  }
+
+  // Helper: detect dignity in a varga
+  const EXALTATION = {Sun:'Aries',Moon:'Taurus',Mars:'Capricorn',Mercury:'Virgo',
+    Jupiter:'Cancer',Venus:'Pisces',Saturn:'Libra'};
+  const OWN_SIGNS = {Sun:['Leo'],Moon:['Cancer'],Mars:['Aries','Scorpio'],
+    Mercury:['Gemini','Virgo'],Jupiter:['Sagittarius','Pisces'],
+    Venus:['Taurus','Libra'],Saturn:['Capricorn','Aquarius']};
+  const DEBILITATION = {Sun:'Libra',Moon:'Scorpio',Mars:'Cancer',Mercury:'Pisces',
+    Jupiter:'Capricorn',Venus:'Virgo',Saturn:'Aries'};
+
+  function vargaDignity(planet, sign) {
+    if (EXALTATION[planet] === sign) return 'exalted';
+    if ((OWN_SIGNS[planet]||[]).includes(sign)) return 'own sign';
+    if (DEBILITATION[planet] === sign) return 'debilitated';
+    return null;
+  }
+
+  // Find most significant D9 planets (exalted/own/debilitated)
+  function getSignificantD9() {
+    const notable = [];
+    const planets9 = ['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn'];
+    for (const p of planets9) {
+      const s = getPlanetSign('D9', p);
+      const dig = vargaDignity(p, s);
+      if (dig) notable.push({ planet:p, sign:s, dignity:dig });
+    }
+    return notable;
+  }
+
+  const d9Lagna = getVargaLagna('D9');
+  const d9LagnaLord = SIGN_LORD_MAP[d9Lagna] || '—';
+  const d9LagnaLordSign = getPlanetSign('D9', d9LagnaLord);
+  const d9Notable = getSignificantD9();
+
+  // D9 notable planet sentence
+  let d9NotableSent = '';
+  if (d9Notable.length > 0) {
+    d9NotableSent = d9Notable.map(n =>
+      `${n.planet} is ${n.dignity} in ${n.sign} in the Navamsa — ${
+        n.dignity === 'exalted' ? 'indicating a strengthened and refined expression of this planet\u2019s qualities in the soul\u2019s deeper dharmic life'
+        : n.dignity === 'own sign' ? 'suggesting this planet\u2019s energy is at ease in the deeper chart, supporting the soul\u2019s inherent dharmic direction'
+        : 'indicating a specific challenge or area of karmic friction in the soul\u2019s deeper nature that asks for conscious work rather than avoidance'
+      }.`
+    ).join(' ');
+  } else {
+    d9NotableSent = 'No planets are exalted or debilitated in the Navamsa for this chart — the energy distributes across the chart without a single dominant point of intensity or challenge at the Navamsa level.';
+  }
+
+  // D9 Lagna quality
+  const D9_LAGNA_QUALITY = {
+    Aries:"a courageous, initiating quality — the soul's dharmic direction involves direct, purposeful engagement with life rather than contemplation from a distance",
+    Taurus:"a steady, grounded orientation — the soul's dharmic direction involves building something of lasting value and learning the right relationship with beauty and material form",
+    Gemini:"a curious, relational quality — the soul's dharmic direction involves communication, learning, and the development of genuine discrimination in the use of intelligence",
+    Cancer:"a deeply nurturing, emotionally perceptive nature — the soul's dharmic direction involves learning the right relationship with care, belonging, and emotional truth",
+    Leo:"a quality of inherent dignity and the drive toward genuine self-expression — the soul's dharmic direction involves developing authentic authority rather than performed confidence",
+    Virgo:"a precise, service-oriented nature — the soul's dharmic direction involves the refinement of skill and discrimination, and the practice of honest, grounded service",
+    Libra:"a relational, harmonising orientation — the soul's dharmic direction involves genuine fairness, conscious partnership, and developing clarity about what one actually values",
+    Scorpio:"a deep, penetrating quality — the soul's dharmic direction involves genuine transformation, the willingness to see through surface reality, and the honest engagement with what is hidden",
+    Sagittarius:"a philosophical, meaning-seeking orientation — the soul's dharmic direction involves the honest pursuit of wisdom and the development of genuine understanding over comfortable belief",
+    Capricorn:"a disciplined, structured orientation — the soul's dharmic direction involves sustained effort, integrity, and the patient building of something genuinely durable",
+    Aquarius:"a principled, collective orientation — the soul's dharmic direction involves genuine service to a larger purpose and the development of detachment grounded in understanding rather than distance",
+    Pisces:"a fluid, spiritually permeable orientation — the soul's dharmic direction involves compassion, the dissolution of unnecessary ego boundaries, and the genuine recognition of what is real beneath appearances",
+  };
+
+  const d9LagnaDesc = D9_LAGNA_QUALITY[d9Lagna] || 'a specific dharmic orientation whose full quality is best assessed in context of the complete Navamsa chart';
+
+  const D9_READ = `The Navamsa — D9 — is the most important of the divisional charts. It reveals the soul's deeper nature, the quality of the dharmic life beneath the surface of the D1, and is traditionally read for themes of marriage, inner resilience, and the soul's direction of growth. In this chart, the Navamsa Lagna is ${d9Lagna} — indicating ${d9LagnaDesc}. The Navamsa Lagna lord ${d9LagnaLord} is placed in ${d9LagnaLordSign} in the Navamsa — the lord's placement shows how this dharmic orientation finds its most natural channel of expression. ${d9NotableSent} The D9 should always be read alongside the D1 — a planet that appears weak in the Rasi chart but is strong in the Navamsa often recovers significant strength in lived experience; the reverse is also true.`;
+
+  // Other Mukhya Varga readings
+  const d10Lagna = getVargaLagna('D10');
+  const D10_READ = `The Dashamsa — D10 — examines career, public role, and the nature of one's conscious contribution to the world. It is the primary chart for understanding professional life and the specific quality of action through which a person engages the world. In this chart, the D10 Lagna is ${d10Lagna} — ruled by ${SIGN_LORD_MAP[d10Lagna]}, indicating the general quality and direction of the native's most purposeful worldly engagement. The D10 is best understood not as a predictor of profession but as a map of the kind of action that is most naturally aligned with the soul's direction in this life.`;
+
+  const d7Lagna = getVargaLagna('D7');
+  const D7_READ = `The Saptamsa — D7 — examines children, creative progeny, and the quality of courage and effort through which one brings new life into existence (in the broadest sense — creative works, projects, and actual children). The D7 Lagna here is ${d7Lagna}, indicating the general quality of this creative and generative domain. Saturn's traditional role in D7 is particularly significant — its placement shapes whether creative effort flows with relative ease or requires sustained patient discipline.`;
+
+  const d12Lagna = getVargaLagna('D12');
+  const D12_READ = `The Dwadashamsa — D12 — examines the parents, ancestral inheritance, and the karmic material carried from the family of origin. It also has significance for the quality of liberation and the themes of the 12th house writ larger across the life. The D12 Lagna is ${d12Lagna} here — the quality of the Lagna sign and the placement of its lord in the D12 indicate the specific texture of the ancestral inheritance this soul carries and works through in this life.`;
+
+  const d24Lagna = getVargaLagna('D24');
+  const D24_READ = `The Chaturvimshamsa — D24 — examines education, learning, and the quality of fortune available in this life through knowledge. It is the primary chart for understanding formal and informal education, intellectual development, and the specific kind of knowledge the soul is oriented toward in this life. The D24 Lagna here is ${d24Lagna} — this sign and the placement of its lord in the D24 indicate the native's deepest orientation toward learning and the specific domain of knowledge most naturally aligned with this soul's development.`;
+
+  const d20Lagna = getVargaLagna('D20');
+  const D20_READ = `The Vimshamsa — D20 — examines spiritual merit, religious practice, and the soul's orientation toward sadhana and devotional life. Of the Mukhya Varga charts, D20 is the most directly connected to inner practice rather than outer life domain. The D20 Lagna here is ${d20Lagna} — the quality of this sign and the placement of its lord in the D20 indicate the specific spiritual orientation most naturally available to this soul and the kind of practice that is most genuinely aligned with its dharmic direction.`;
+
+  const d60Lagna = getVargaLagna('D60');
+  const D60_READ = `The Shashtiamsa — D60 — is considered by classical texts to be the most sensitive and comprehensive of all divisional charts, encompassing the total karma of the life. It requires precise birth time — even a few minutes' variation significantly shifts D60 positions. The D60 Lagna here is ${d60Lagna}. Because of its extreme sensitivity to birth time accuracy, D60 placements should be verified against life events by a qualified practitioner before drawing conclusions. What the D60 shows when correctly calibrated is the overall karmic texture of the life — the specific quality of Prarabdha being worked through in this incarnation.`;
+
+  // Advanced charts status
+  const ADVANCED_STATUS = `The eight advanced divisional charts — D2 (Hora), D3 (Drekkana), D4 (Chaturthamsa), D16 (Shodashamsa), D27 (Bhamsa), D30 (Trimshamsa), D40 (Khavedamsa), D45 (Akshavedamsa) — are computed and displayed in the collapsible "Advanced Charts" section above. Detailed written readings for these eight charts are not provided here as each requires specialist interpretation in context of the complete chart. Their primary use is for specialist Jyotish analysis rather than general self-understanding.`;
+
+  function block(title, content) {
+    return `<div class="interp-section" style="margin-bottom:1.5rem">
+      <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--gold-dim);
+        font-family:var(--font-mono);margin-bottom:.6rem;padding-bottom:.3rem;
+        border-bottom:1px solid var(--border)">${title}</div>
+      <div class="interp-block">${renderText(content)}</div>
+    </div>`;
+  }
+
+  return [
+    block('D9 — Navamsa', D9_READ),
+    block('D10 — Dashamsa', D10_READ),
+    block('D7 — Saptamsa', D7_READ),
+    block('D12 — Dwadashamsa', D12_READ),
+    block('D24 — Chaturvimshamsa', D24_READ),
+    block('D20 — Vimshamsa', D20_READ),
+    block('D60 — Shashtiamsa', D60_READ),
+    block('Advanced Charts — D2 D3 D4 D16 D27 D30 D40 D45', ADVANCED_STATUS),
+  ].join('');
 }
 
 function renderYogaList(yogaReadings) {
@@ -495,6 +634,11 @@ function renderOutput(data) {
   // Varga charts
   renderChartGrid(varga, planets, planetHouses, $('mukhya-charts'), MUKHYA_KEYS);
   renderChartGrid(varga, planets, planetHouses, $('advanced-chart-grid'), ADVANCED_KEYS);
+
+  // Divisional chart readings
+  if ($('varga-readings')) {
+    $('varga-readings').innerHTML = renderVargaReadings(varga, lagna, planets, planetHouses);
+  }
 
   // Show output
   $('chart-output').style.display = 'block';
