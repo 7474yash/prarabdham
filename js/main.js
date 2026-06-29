@@ -526,11 +526,61 @@ function renderSadhanaMap(lagna, planets, planetHouses, dignityReport, currentDa
   const pathStr = primaryPaths.join(' and ');
 
   // Path descriptions
+  // Build dynamic reasoning text that references actual chart data
+  function buildJnanaReason() {
+    const reasons = [];
+    if (jupiter && ['own','exalted'].includes(jupiter.dignity)) {
+      const jupH = planetHouses['Jupiter'];
+      reasons.push(`Jupiter — ${jupiter.dignity} — placed in the ${jupH}th house`);
+    }
+    if (mercury && ['own','exalted'].includes(mercury.dignity)) {
+      reasons.push(`Mercury — ${mercury.dignity} — placed in the ${mercuryH}th house`);
+    } else if (mercury && mercury.dignity === 'friendly' && mercuryH === 9) {
+      reasons.push(`Mercury in the 9th house`);
+    }
+    if (['Gemini','Virgo'].includes(lagnaSign)) reasons.push(`${lagnaSign} Lagna`);
+    if (mercury && mercury.dignity === 'friendly' && mercuryH !== 9 && reasons.length === 0) {
+      reasons.push(`Mercury in the ${mercuryH}th house`);
+    }
+    const indicator = reasons.length > 0 ? reasons.join(', ') : "the chart’s orientation toward wisdom and discernment";
+    return `The chart's indicators — ${indicator} — point toward Jnana Yoga as a natural sadhana direction. Jnana Yoga is the path of knowledge and honest self-inquiry: the sustained, patient practice of distinguishing the real from the unreal, the consciousness that observes from the patterns it observes. For this chart, the practice of Svadhyaya — systematic self-reflection and the study of genuine wisdom texts — is the most naturally aligned foundational approach.`;
+  }
+
+  function buildBhaktiReason() {
+    const reasons = [];
+    if (moon && ['own','exalted'].includes(moon.dignity)) reasons.push(`Moon — ${moon.dignity}`);
+    if (venus && ['own','exalted'].includes(venus.dignity)) reasons.push(`Venus — ${venus.dignity}`);
+    if (moonH === 12) reasons.push('Moon in the 12th house');
+    if (venusH === 12) reasons.push('Venus in the 12th house');
+    if (['Cancer','Scorpio','Pisces'].includes(lagnaSign)) reasons.push(`${lagnaSign} Lagna (water element)`);
+    const indicator = reasons.length > 0 ? reasons.join(', ') : "the chart’s sensitivity and orientation toward the subtle";
+    return `The chart's indicators — ${indicator} — point toward Bhakti Yoga as a natural sadhana direction. Bhakti Yoga is the path of devotion: the complete offering of the self toward the source, dissolving the sense of separation through love rather than understanding. For this chart, the cultivation of genuine devotional practice — mantra, puja, or any form of heartfelt offering to what is genuinely sacred — is the most naturally aligned foundational approach.`;
+  }
+
+  function buildKarmaReason() {
+    const reasons = [];
+    if (mars && ['own','exalted'].includes(mars.dignity)) reasons.push(`Mars — ${mars.dignity} — in the ${marsH}th house`);
+    if (saturn && ['own','exalted'].includes(saturn.dignity)) reasons.push(`Saturn — ${saturn.dignity} — in the ${saturnH}th house`);
+    if (marsH === 10) reasons.push('Mars occupying the 10th house');
+    if (saturnH === 10) reasons.push('Saturn occupying the 10th house');
+    if (['Aries','Scorpio','Capricorn','Aquarius'].includes(lagnaSign)) reasons.push(`${lagnaSign} Lagna`);
+    const indicator = reasons.length > 0 ? reasons.join(', ') : "the chart’s orientation toward disciplined purposeful action";
+    return `The chart's indicators — ${indicator} — point toward Karma Yoga as a natural sadhana direction. Karma Yoga is the path of conscious action: acting fully and completely in whatever domain calls for action, without attachment to results, working as an instrument of Dharma rather than for personal gain. For this chart, the key practice is bringing genuine inner presence and non-attachment to the work and effort that the chart already indicates are central life themes.`;
+  }
+
+  function buildRajaReason() {
+    const reasons = [];
+    if (saturn && ['own','exalted','friendly'].includes(saturn.dignity)) reasons.push(`Saturn — ${saturn.dignity} — in the ${saturnH}th house`);
+    if (['Capricorn','Aquarius','Virgo'].includes(lagnaSign)) reasons.push(`${lagnaSign} Lagna`);
+    const indicator = reasons.length > 0 ? reasons.join(', ') : "the chart’s capacity for sustained inner discipline";
+    return `The chart's indicators — ${indicator} — point toward Raja Yoga as a natural sadhana direction. Raja Yoga, as systematised by Patanjali in the Yoga Sutras, works directly with the mind and energy through the eight limbs of Ashtanga Yoga: from ethical conduct and personal discipline through to deep meditative absorption. For this chart, the regular practice of the foundational limbs — Surya Namaskar, Nadi Shodhana, Svadhyaya, and Pratyahara — is the most naturally aligned approach, with the deeper limbs developed under genuine guidance.`;
+  }
+
   const PATH_DESC = {
-    'Jnana Yoga': "The chart's indicators — a prominent Mercury, strong analytical capacity, and orientation toward the 9th house domain of wisdom and teaching — point toward Jnana Yoga as a natural sadhana direction. Jnana Yoga is the path of knowledge and honest self-inquiry: the sustained, patient practice of distinguishing the real from the unreal, the consciousness that observes from the patterns it observes. For this chart, the practice of Svadhyaya — systematic self-reflection and the study of genuine wisdom texts — is the most naturally aligned foundational approach.",
-    'Bhakti Yoga': "The chart's indicators — a prominent Moon and/or Venus, sensitivity to the subtle, and an orientation toward the water element — point toward Bhakti Yoga as a natural sadhana direction. Bhakti Yoga is the path of devotion: the complete offering of the self toward the source, dissolving the sense of separation through love rather than understanding. For this chart, the cultivation of genuine devotional practice — mantra, puja, or any form of heartfelt offering to what is genuinely sacred — is the most naturally aligned foundational approach.",
-    'Karma Yoga': "The chart's indicators — a strong Mars and/or Saturn, occupation of the 10th house, and an orientation toward disciplined purposeful action — point toward Karma Yoga as a natural sadhana direction. Karma Yoga is the path of conscious action: acting fully and completely in whatever domain calls for action, without attachment to results, working as an instrument of Dharma rather than for personal gain. For this chart, the key practice is bringing genuine inner presence and non-attachment to the work and effort that the chart already indicates are central life themes.",
-    'Raja Yoga (Ashtanga)': "The chart's indicators — a dignified Saturn, the capacity for sustained inner discipline, and the orientation toward systematic inner work — point toward Raja Yoga as a natural sadhana direction. Raja Yoga, as systematised by Patanjali in the Yoga Sutras, works directly with the mind and energy through the eight limbs of Ashtanga Yoga: from ethical conduct and personal discipline through to deep meditative absorption. For this chart, the regular practice of the foundational limbs — Surya Namaskar, Nadi Shodhana, Svadhyaya, and Pratyahara — is the most naturally aligned approach, with the deeper limbs developed under genuine guidance.",
+    'Jnana Yoga': buildJnanaReason(),
+    'Bhakti Yoga': buildBhaktiReason(),
+    'Karma Yoga': buildKarmaReason(),
+    'Raja Yoga (Ashtanga)': buildRajaReason(),
   };
 
   const pathContent = primaryPaths.map(p => PATH_DESC[p] || '').join(' ');
@@ -594,7 +644,7 @@ function renderYogaList(yogaReadings) {
       <div class="yoga-item-name">${y.name}</div>
       <div class="yoga-item-detected">${y.description}</div>
       <div class="yoga-item-reading">${renderText(y.reading)}</div>
-      ${y.uncertainty ? `<div class="yoga-uncertainty">⚠ ${y.uncertainty}</div>` : ''}
+      <!-- uncertainty note intentionally omitted from user output — kept in yoga.js as code comment -->
     </div>`).join('');
 }
 
