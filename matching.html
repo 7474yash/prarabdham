@@ -74,6 +74,60 @@
       .persons-grid { grid-template-columns: 1fr; }
       .dosha-grid  { grid-template-columns: 1fr; }
     }
+
+    /* Educational content — hidden on screen, shown only in print */
+    .match-print-content { display: none; }
+    .print-footer-brand { display: none; }
+
+    /* Print styles — reuses the exact same approach already working on chart.html */
+    @media print {
+      .site-header, footer, .output-actions, #match-form,
+      .loading-overlay, #match-pdf-btn, #match-restart { display: none !important; }
+
+      @page { margin: 0; size: A4 portrait; }
+      html, body { padding: 1.8cm 1.5cm !important; background: #fff !important; color: #1a1a1a !important; font-size: 11pt; }
+      * { color: inherit !important; background: transparent !important; border-color: #ccc !important; box-shadow: none !important; }
+
+      .matching-page { max-width: 100% !important; }
+      h1 { color: #1a1a1a !important; font-size: 18pt !important; }
+      .matching-intro { display: none; }
+
+      .out-title { color: #333 !important; border-bottom-color: #999 !important; font-size: 8pt !important; }
+      .score-strip { gap: .5rem; }
+      .score-chip { border: 1px solid #bbb !important; break-inside: avoid; }
+      .sc-value { color: #333 !important; }
+
+      table.mf { width: 100% !important; font-size: 9pt !important; }
+      table.mf th { background: #f0f0f0 !important; color: #333 !important; border-bottom-color: #999 !important; }
+      table.mf td { border-bottom-color: #ddd !important; }
+      .pc { color: #1a6b1a !important; } .fc { color: #8b0000 !important; } .wc { color: #7a4000 !important; }
+      .crit-row td { background: #faf0f0 !important; }
+      table.mf, .dosha-grid { break-inside: avoid; }
+
+      .dosha-card { border: 1px solid #ccc !important; break-inside: avoid; }
+      .dosha-title { color: #1a1a1a !important; }
+      .dosha-note { color: #444 !important; }
+
+      /* Educational content shows in print, with page breaks before major sections */
+      .match-print-content { display: block !important; }
+      .match-print-content .out-title { break-before: page; }
+      .match-print-content .out-title:first-child { break-before: auto; }
+      .match-print-content .interp-block { font-size: 10pt; line-height: 1.65; color: #333 !important;
+        border: 1px solid #ccc !important; background: #fafafa !important; padding: .75rem !important;
+        break-inside: avoid; margin-bottom: 1rem; }
+
+      .closing-note { break-before: page; border: 1px solid #999 !important; border-top: 2px solid #555 !important;
+        background: #f9f9f9 !important; padding: 1rem !important; font-size: 9pt !important; color: #444 !important;
+        font-style: italic; }
+      .closing-note-label { color: #555 !important; font-style: normal; }
+
+      /* 7474yash brand — print footer, no browser URL */
+      .print-footer-brand, #match-report-brand {
+        display: block !important; color: #C9A84C !important;
+        font-family: "Courier New", monospace !important; font-size: 9pt !important;
+        text-align: center !important; margin-top: 1rem !important; letter-spacing: .1em !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -193,12 +247,78 @@
       <div class="dosha-grid" id="dosha-grid"></div>
     </div>
 
+    <!-- Educational content — hidden on screen (already on kundali-matching.html), shown in print only -->
+    <div id="match-print-content" class="match-print-content">
+
+      <div class="out-title">What Kundali Matching Actually Is</div>
+      <div class="interp-block">
+        <p>Kundali matching is the practice of comparing two birth charts to understand the compatibility between two people considering marriage. It is not a test that a couple passes or fails. It is a tool for understanding — what natural harmonies exist between two people, where friction is likely, and what areas of the relationship will need conscious effort.</p>
+        <p>The classical purpose of matching was never to reject people from each other. It was to help families and individuals understand what they were entering — so they could approach the relationship with appropriate preparation and awareness rather than blind hope or blind fear.</p>
+        <p>A matching score — whether from the South Indian Dasa Porutham system or the North Indian Ashta Koota system — is one input. It is not a verdict on whether a marriage will succeed or fail. No chart matching system has ever been able to make that determination with certainty, and any practitioner who claims otherwise is overstating what the system can deliver.</p>
+      </div>
+
+      <div class="out-title">What Kundali Matching Is Not</div>
+      <div class="interp-block">
+        <p>It is not a guarantee of happiness for a high scoring match. Two charts that match beautifully on paper belong to two people who still need to choose each other consciously, communicate honestly, and work through difficulty together. The chart matching describes the terrain. It does not walk the road.</p>
+        <p>It is not a complete picture of compatibility. The matching systems examine specific factors — primarily Moon sign based. They do not capture the full complexity of two complete birth charts in relationship. A thorough compatibility assessment looks at the entire chart of both individuals, not just the matching points.</p>
+        <p>It is not a substitute for knowing a person. No matching system replaces genuine understanding between two people — their values, their communication, their willingness to grow together. These are things no chart can fully measure.</p>
+      </div>
+
+      <div class="out-title">Mangal Dosha — Honest Understanding</div>
+      <div class="interp-block">
+        <p>Mangal Dosha — known as Chevvai Dosham in Tamil — is one of the most feared considerations in kundali matching. It refers to Mars placed in specific houses in the birth chart — traditionally the first, second, fourth, seventh, eighth, or twelfth house, though different traditions count different houses.</p>
+        <p>The fear around it is disproportionate to what the classical texts actually say.</p>
+        <p>What the classical texts say is that Mars in these positions indicates a strong, intense, sometimes aggressive energy in the areas of life those houses represent — particularly in relationships and partnership. It indicates a person with strong will, high energy, and a tendency toward directness that can create friction in close relationships if not understood and worked with consciously.</p>
+        <p>What the classical texts also say — and what is rarely mentioned in popular discourse — is that there are numerous conditions under which Mangal Dosha is cancelled or significantly reduced. These include: Mars in its own sign or exaltation; Mars aspected by Jupiter; Mars in the second house in certain signs; both partners having Mangal Dosha, in which case the energies balance each other; specific Lagna conditions that neutralise the effect; and age at marriage, since the intensity of Mangal Dosha is considered to reduce significantly after a certain age, traditionally around 28.</p>
+        <p>The practical reality is this — a person with Mangal Dosha is not cursed. They carry a specific intensity and strength that in a relationship requires understanding, matched energy, and conscious communication. Matched with the right person and approached with awareness, this same intensity becomes passion, protectiveness, and drive.</p>
+      </div>
+
+      <div class="out-title">Nadi Dosha — Honest Understanding</div>
+      <div class="interp-block">
+        <p>Nadi Dosha occurs when both partners belong to the same Nadi — Adi, Madhya, or Antya — as determined by their birth Nakshatra. In the Ashta Koota system it carries the highest point value of all eight factors, and its presence is often treated as a serious obstacle.</p>
+        <p>The classical reasoning behind Nadi Dosha relates to constitutional compatibility — the idea that two people of the same Nadi share a similar energetic constitution, which can create specific challenges in health, progeny, and long term harmony.</p>
+        <p>What needs to be understood honestly: The Nadi system is one framework within one matching system. The South Indian Dasa Porutham system does not use Nadi as a primary factor in the same way. Different classical texts weight it differently. Some modern practitioners who have studied large numbers of charts have found that Nadi Dosha alone, without other supporting negative factors, does not reliably predict the difficulties it is feared to cause. This does not mean dismissing it entirely. It means understanding it as one factor within a complete picture — not an isolated verdict.</p>
+      </div>
+
+      <div class="out-title">Low Compatibility Scores — What They Mean and Do Not Mean</div>
+      <div class="interp-block">
+        <p>A low Dasa Porutham score or a low Ashta Koota score does not mean two people should not marry. It means specific areas of natural compatibility are weaker and will require more conscious effort.</p>
+        <p>Every marriage — regardless of matching score — requires conscious effort. The difference between a high scoring and low scoring match is the terrain, not the destination. A high scoring match has more natural ease in certain areas. A low scoring match has more friction in those same areas. But friction consciously worked through builds a deeper relationship than ease unconsciously taken for granted.</p>
+        <p>What a low score should prompt is honest conversation — about the specific areas where friction is likely, about whether both people have the awareness and willingness to work through those areas, about what support systems and practices they will bring to the relationship. What it should not prompt is fear, rejection of a genuinely compatible person, or the assumption that the relationship is destined to fail.</p>
+      </div>
+
+      <div class="out-title">Examples from Tradition</div>
+      <div class="interp-block">
+        <p>The life of Valmiki — who by his own account carried the karma of a life lived in darkness before his transformation — demonstrates that no karmic condition, however heavy, is beyond conscious transformation. His Prarabdha did not define his destination. His conscious turning toward the source did.</p>
+        <p>The partnership of Lopamudra and Agastya, documented in the Rigveda itself, shows what conscious compatibility looks like. Agastya's nature was intense, demanding, and deeply absorbed in sadhana — conditions that by conventional matching standards would raise serious questions. Lopamudra brought to that relationship her own equal depth, her own learning, and her own voice — she is herself acknowledged as a Rishi in the Vedic tradition. Their union worked not because the conditions were easy but because both brought genuine consciousness to it.</p>
+      </div>
+
+      <div class="out-title">How to Approach Matching Responsibly</div>
+      <div class="interp-block">
+        <p>Use the matching as a starting point for honest conversation, not an ending point for decision making. Look at both complete charts — not just the matching factors. The full chart of each person tells a more complete story than any matching system alone.</p>
+        <p>Understand what each factor means before reacting to its presence or absence. Fear of a name — Mangal Dosha, Nadi Dosha — without understanding what it actually indicates is not wisdom. It is superstition wearing the clothes of tradition. Consult a genuine and experienced practitioner if specific concerns arise — not for a verdict but for genuine understanding of what the chart conditions mean and how to work with them.</p>
+      </div>
+
+      <div class="out-title">Free Will and Conscious Relationship</div>
+      <div class="interp-block">
+        <p>No matching system — however thorough, however classically grounded — can account for the most important factor in any marriage: the quality of consciousness and commitment that two people bring to each other every day.</p>
+        <p>Two people with perfect chart matching who do not communicate honestly, who do not choose each other consciously, who do not work through difficulty with patience — will struggle regardless of their score. Two people with imperfect matching who bring genuine understanding, honest communication, and conscious commitment to their relationship — build something real regardless of what the chart says.</p>
+        <p>The chart shows the terrain. The relationship is built by the people in it.</p>
+      </div>
+
+    </div><!-- end match-print-content -->
+
     <div class="closing-note">
       <span class="closing-note-label">A note on this reading</span>
       This reading is a framework for honest reflection — not a verdict about your life or a fixed description of who you are. The chart shows the terrain your consciousness is navigating in this life. How you navigate it is always your own. For personalised interpretation consult a qualified Jyotish practitioner. For specific remedies consult an experienced Pandit. For sadhana begin with the basic practices in the Sadhana Path section of this site.
+      <span class="print-footer-brand">7474yash</span>
     </div>
 
+    <!-- 7474yash brand — visible on screen and in print -->
+    <div id="match-report-brand" style="text-align:center;margin:1.5rem 0 .5rem;font-family:var(--font-mono);font-size:.78rem;color:#C9A84C;letter-spacing:.1em;">7474yash</div>
+
     <div class="output-actions">
+      <button class="btn btn-ghost btn-sm" id="match-pdf-btn">Download PDF</button>
       <button class="btn btn-ghost btn-sm" id="match-restart">Start over</button>
     </div>
   </div>
@@ -402,6 +522,8 @@ $('match-restart').addEventListener('click', () => {
   $('match-form').style.display='block';
   window.scrollTo({top:0,behavior:'smooth'});
 });
+// PDF — reuses the exact same window.print() pattern already working on chart.html
+$('match-pdf-btn').addEventListener('click', () => window.print());
 </script>
 </body>
 </html>
