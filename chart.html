@@ -41,8 +41,13 @@
       <!-- Date + Time -->
       <div class="form-row">
         <div class="form-group">
-          <label for="f-date">Date of birth</label>
-          <input type="date" id="f-date" required/>
+          <label>Date of birth</label>
+          <div class="dob-select-row">
+            <select id="f-day" class="dob-select" aria-label="Day"><option value="">Day</option></select>
+            <select id="f-month" class="dob-select" aria-label="Month"><option value="">Month</option></select>
+            <select id="f-year" class="dob-select" aria-label="Year"><option value="">Year</option></select>
+          </div>
+          <input type="hidden" id="f-date" required/>
         </div>
         <div class="form-group">
           <label for="f-time">Time of birth</label>

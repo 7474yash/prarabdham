@@ -114,6 +114,57 @@ function setupPlaceSearch() {
 // Form helpers
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Day / Month / Year dropdown date picker
+// Populates the three selects and keeps a hidden input in sync with the
+// YYYY-MM-DD format core.js's getJulianDay() consumers already expect.
+// ---------------------------------------------------------------------------
+
+const MONTH_NAMES = ['January','February','March','April','May','June',
+  'July','August','September','October','November','December'];
+
+function setupDobDropdowns(prefix = 'f') {
+  const daySel   = document.getElementById(`${prefix}-day`);
+  const monthSel = document.getElementById(`${prefix}-month`);
+  const yearSel  = document.getElementById(`${prefix}-year`);
+  const hidden   = document.getElementById(`${prefix}-date`);
+  if (!daySel || !monthSel || !yearSel || !hidden) return;
+
+  // Day 1–31
+  for (let d = 1; d <= 31; d++) {
+    const opt = document.createElement('option');
+    opt.value = String(d).padStart(2, '0');
+    opt.textContent = d;
+    daySel.appendChild(opt);
+  }
+
+  // Month by name, value = 01–12
+  MONTH_NAMES.forEach((name, i) => {
+    const opt = document.createElement('option');
+    opt.value = String(i + 1).padStart(2, '0');
+    opt.textContent = name;
+    monthSel.appendChild(opt);
+  });
+
+  // Year — current year down to 1900, so recent years show first
+  const currentYear = new Date().getFullYear();
+  for (let y = currentYear; y >= 1900; y--) {
+    const opt = document.createElement('option');
+    opt.value = String(y);
+    opt.textContent = y;
+    yearSel.appendChild(opt);
+  }
+
+  function syncHidden() {
+    const d = daySel.value, m = monthSel.value, y = yearSel.value;
+    hidden.value = (d && m && y) ? `${y}-${m}-${d}` : '';
+  }
+
+  daySel.addEventListener('change', syncHidden);
+  monthSel.addEventListener('change', syncHidden);
+  yearSel.addEventListener('change', syncHidden);
+}
+
 function setupNoTimeCheckbox() {
   const cb   = $('f-no-time');
   const time = $('f-time');
@@ -945,6 +996,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Only run on chart page
   if (!$('generate-btn')) return;
 
+  setupDobDropdowns('f');
   setupPlaceSearch();
   setupNoTimeCheckbox();
   setupAyanamsaNote();

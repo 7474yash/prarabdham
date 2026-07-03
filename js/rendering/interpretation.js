@@ -285,32 +285,64 @@ export function buildYogaReading(yogas) {
  * @param {object} planetHouses
  * @returns {string}
  */
-export function buildSummary(lagnaReading, houseReadings, dashaReading, lagna, planets, planetHouses) {
+export function buildSummary(lagnaReading, houseReadings, dashaReading, lagna, planets, planetHouses, dignityReport = {}) {
   const lagnaLord     = SIGN_LORD[lagna.sign];
   const lagnaLordSign = planets[lagnaLord]?.sign || '?';
   const lagnaLordH    = planetHouses[lagnaLord] || '?';
+  const lagnaLordDig  = dignityReport[lagnaLord]?.dignity || planets[lagnaLord]?.dignity || '';
 
-  // Find which Dasha lord is mentioned in dashaReading
   const dashaLordMatch = dashaReading.match(/Maha Dasha: (\w+)/);
   const dashaLord = dashaLordMatch ? dashaLordMatch[1] : null;
   const dashaLordH = dashaLord ? (planetHouses[dashaLord] || '?') : null;
+  const dashaLordDig = dashaLord ? (dignityReport[dashaLord]?.dignity || planets[dashaLord]?.dignity || '') : '';
 
-  let summary = `This chart is oriented through ${lagna.sign} Lagna — its primary lens is ${lagna.sign}'s quality of attention and engagement with the world. `;
-  summary += `The Lagna lord ${lagnaLord} is placed in ${lagnaLordSign} in the ${ordinal(lagnaLordH)} house, which is the primary channel through which this orientation finds concrete expression. `;
+  const PLANETS = ['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn','Rahu','Ketu'];
+  let standout = null;
+  for (const name of PLANETS) {
+    const d = dignityReport[name];
+    if (d && (d.dignity === 'exalted' || d.dignity === 'own')) {
+      standout = { name, dignity: d.dignity, house: planetHouses[name], kind: 'strong' };
+      if (d.dignity === 'exalted') break;
+    }
+  }
+  if (!standout) {
+    for (const name of PLANETS) {
+      const d = dignityReport[name];
+      if (d && d.dignity === 'debilitated') {
+        standout = { name, dignity: d.dignity, house: planetHouses[name], kind: 'challenged' };
+        break;
+      }
+    }
+  }
+
+  const lordDigPhrase = lagnaLordDig
+    ? (lagnaLordDig === 'own' ? `comfortably placed in its own sign, ${lagnaLordSign}`
+      : lagnaLordDig === 'exalted' ? `exalted in ${lagnaLordSign}, its strongest possible position`
+      : lagnaLordDig === 'debilitated' ? `debilitated in ${lagnaLordSign}, asking for conscious effort where ease might otherwise be expected`
+      : `placed in ${lagnaLordSign}`)
+    : `placed in ${lagnaLordSign}`;
+
+  let summary = `${lagna.sign} rises in this chart, and its lord ${lagnaLord} is ${lordDigPhrase}, in the ${ordinal(lagnaLordH)} house — meaning the native's core orientation toward the world finds its most concrete outlet there. `;
+
+  if (standout) {
+    if (standout.kind === 'strong') {
+      summary += `The most notable strength in the chart is ${standout.name}, ${standout.dignity} in the ${ordinal(standout.house)} house — a placement that lends real, dependable capacity to whatever that house represents, and colours the chart's overall resilience. `;
+    } else {
+      summary += `The most significant point of friction is ${standout.name}, debilitated in the ${ordinal(standout.house)} house — not a flaw but the specific area this soul is being asked to work through consciously rather than avoid. `;
+    }
+  }
 
   if (dashaLord) {
-    const dashaLordDig = planets[dashaLord]?.dignity || '';
-    summary += `The current Maha Dasha of ${dashaLord}${dashaLordDig ? ' (' + dashaLordDig + ')' : ''} in the ${ordinal(dashaLordH)} house is the primary temporal context — the area of life and quality of energy that this period is asking to be engaged with directly. `;
+    const digWord = dashaLordDig ? ` (${dashaLordDig})` : '';
+    summary += `Right now, the ${dashaLord} Dasha is active — with ${dashaLord}${digWord} sitting in the ${ordinal(dashaLordH)} house of this chart, this period is drawing attention squarely into that house's domain, activating themes the native may not otherwise have prioritised. `;
   }
 
-  // Note occupied angular houses if any
-  const angularOccupied = houseReadings.filter(h => [1,4,7,10].includes(h.houseNumber) && h.occupants.length > 0);
-  if (angularOccupied.length > 0) {
-    const angNotes = angularOccupied.map(h => `the ${ordinal(h.houseNumber)} house (${h.occupants.join(', ')})`).join(', ');
-    summary += `Angular houses carry particular weight in expression of the chart; here ${angNotes} ${angularOccupied.length === 1 ? 'is' : 'are'} occupied. `;
-  }
-
-  summary += `The interplay between the Lagna\'s orientation, the Dasha period\'s focus, and the houses that are most activated creates the specific terrain this chart is navigating at this time.`;
+  const closeSubject = standout
+    ? (standout.kind === 'strong'
+        ? `leaning on the genuine strength ${standout.name} offers while staying honest about where the rest of the chart still asks for effort`
+        : `meeting the friction around ${standout.name} directly rather than working around it`)
+    : `staying honest about which parts of the chart come easily and which ask for real effort`;
+  summary += `What this chart is ultimately asking for is ${closeSubject} — the terrain is set, but how it is walked remains entirely the native's own.`;
 
   return summary;
 }
@@ -393,7 +425,7 @@ export function buildChartReport(chartData) {
   const yogaReadings = yogas ? buildYogaReading(yogas) : [];
 
   // ── Summary ──
-  const summary = buildSummary(lagnaReading, houseReadings, dashaReading, lagna, enrichedPlanets, planetHouses);
+  const summary = buildSummary(lagnaReading, houseReadings, dashaReading, lagna, enrichedPlanets, planetHouses, dignityReport);
 
   return {
     lagnaReading,

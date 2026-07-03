@@ -166,7 +166,12 @@
         </div>
         <div class="form-group">
           <label>Date of birth</label>
-          <input type="date" id="p1-date"/>
+          <div class="dob-select-row">
+            <select id="p1-day" class="dob-select" aria-label="Day"><option value="">Day</option></select>
+            <select id="p1-month" class="dob-select" aria-label="Month"><option value="">Month</option></select>
+            <select id="p1-year" class="dob-select" aria-label="Year"><option value="">Year</option></select>
+          </div>
+          <input type="hidden" id="p1-date"/>
         </div>
         <div class="form-group">
           <label>Time of birth</label>
@@ -192,7 +197,12 @@
         </div>
         <div class="form-group">
           <label>Date of birth</label>
-          <input type="date" id="p2-date"/>
+          <div class="dob-select-row">
+            <select id="p2-day" class="dob-select" aria-label="Day"><option value="">Day</option></select>
+            <select id="p2-month" class="dob-select" aria-label="Month"><option value="">Month</option></select>
+            <select id="p2-year" class="dob-select" aria-label="Year"><option value="">Year</option></select>
+          </div>
+          <input type="hidden" id="p2-date"/>
         </div>
         <div class="form-group">
           <label>Time of birth</label>
@@ -355,6 +365,50 @@ import { getCoordinates, getTimezone, getJulianDay, getLagna, getPlanets } from 
 import { getFullMatchingReport, NAKSHATRA_NAMES } from './js/calculations/matching.js';
 
 const $ = id => document.getElementById(id);
+
+// Day / Month / Year dropdown date picker — keeps hidden #<prefix>-date
+// input in sync in YYYY-MM-DD format for calcChart() to consume.
+const MONTH_NAMES = ['January','February','March','April','May','June',
+  'July','August','September','October','November','December'];
+
+function setupDobDropdowns(prefix) {
+  const daySel   = $(`${prefix}-day`);
+  const monthSel = $(`${prefix}-month`);
+  const yearSel  = $(`${prefix}-year`);
+  const hidden   = $(`${prefix}-date`);
+  if (!daySel || !monthSel || !yearSel || !hidden) return;
+
+  for (let d = 1; d <= 31; d++) {
+    const opt = document.createElement('option');
+    opt.value = String(d).padStart(2, '0');
+    opt.textContent = d;
+    daySel.appendChild(opt);
+  }
+  MONTH_NAMES.forEach((name, i) => {
+    const opt = document.createElement('option');
+    opt.value = String(i + 1).padStart(2, '0');
+    opt.textContent = name;
+    monthSel.appendChild(opt);
+  });
+  const currentYear = new Date().getFullYear();
+  for (let y = currentYear; y >= 1900; y--) {
+    const opt = document.createElement('option');
+    opt.value = String(y);
+    opt.textContent = y;
+    yearSel.appendChild(opt);
+  }
+
+  function syncHidden() {
+    const d = daySel.value, m = monthSel.value, y = yearSel.value;
+    hidden.value = (d && m && y) ? `${y}-${m}-${d}` : '';
+  }
+  daySel.addEventListener('change', syncHidden);
+  monthSel.addEventListener('change', syncHidden);
+  yearSel.addEventListener('change', syncHidden);
+}
+
+setupDobDropdowns('p1');
+setupDobDropdowns('p2');
 const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo',
   'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
 const NAK_SPAN = 360/27;
