@@ -547,26 +547,36 @@ function renderSadhanaMap(lagna, planets, planetHouses, dignityReport, currentDa
   // Score each path
   let jnana = 0, bhakti = 0, karma = 0, raja = 0;
 
+  // Gating rule: a planet only counts as a "prominent" indicator if it is
+  // exalted/own-sign, OR its dignity.js strength rating is genuinely "strong".
+  // Merely "friendly" dignity with challenged/moderate strength does NOT qualify.
+  function qualifies(p) {
+    if (!p) return false;
+    if (['exalted','own'].includes(p.dignity)) return true;
+    if (p.strength && p.strength.rating === 'strong') return true;
+    return false;
+  }
+
   // Jnana indicators: strong Mercury, prominent 9th house, Jupiter strong
-  if (mercury && ['own','exalted','friendly'].includes(mercury.dignity)) jnana += 2;
+  if (qualifies(mercury)) jnana += 2;
   if (mercuryH === 9 || mercuryH === 1) jnana += 1;
-  if (jupiter && ['own','exalted'].includes(jupiter.dignity)) jnana += 1;
+  if (qualifies(jupiter)) jnana += 1;
   if (['Gemini','Virgo'].includes(lagnaSign)) jnana += 1;
 
   // Bhakti indicators: strong Moon/Venus, 12th house occupied, water Lagna
-  if (moon && ['own','exalted','friendly'].includes(moon.dignity)) bhakti += 2;
-  if (venus && ['own','exalted','friendly'].includes(venus.dignity)) bhakti += 1;
-  if (moonH === 12 || venusH === 12) bhakti += 1;
+  if (qualifies(moon)) bhakti += 2;
+  if (qualifies(venus)) bhakti += 1;
+  if ((qualifies(moon) && moonH === 12) || (qualifies(venus) && venusH === 12)) bhakti += 1;
   if (['Cancer','Scorpio','Pisces'].includes(lagnaSign)) bhakti += 2;
 
   // Karma Yoga indicators: strong Mars/Saturn, 10th house occupied
-  if (mars && ['own','exalted'].includes(mars.dignity)) karma += 2;
-  if (saturn && ['own','exalted'].includes(saturn.dignity)) karma += 2;
-  if (marsH === 10 || saturnH === 10) karma += 1;
+  if (qualifies(mars)) karma += 2;
+  if (qualifies(saturn)) karma += 2;
+  if ((qualifies(mars) && marsH === 10) || (qualifies(saturn) && saturnH === 10)) karma += 1;
   if (['Aries','Scorpio','Capricorn','Aquarius'].includes(lagnaSign)) karma += 1;
 
   // Raja Yoga / Ashtanga indicators: Saturn dignified, disciplined Lagna, Jupiter+Saturn
-  if (saturn && ['own','exalted','friendly'].includes(saturn.dignity)) raja += 2;
+  if (qualifies(saturn)) raja += 2;
   if (['Capricorn','Aquarius','Virgo'].includes(lagnaSign)) raja += 1;
   if (jupiter && saturn && ['own','exalted'].includes(jupiter.dignity)) raja += 1;
 
@@ -580,29 +590,21 @@ function renderSadhanaMap(lagna, planets, planetHouses, dignityReport, currentDa
   // Build dynamic reasoning text that references actual chart data
   function buildJnanaReason() {
     const reasons = [];
-    if (jupiter && ['own','exalted'].includes(jupiter.dignity)) {
-      const jupH = planetHouses['Jupiter'];
-      reasons.push(`Jupiter — ${jupiter.dignity} — placed in the ${jupH}th house`);
+    if (qualifies(jupiter)) {
+      reasons.push(`Jupiter — ${jupiter.dignity} — placed in the ${planetHouses['Jupiter']}th house`);
     }
-    if (mercury && ['own','exalted'].includes(mercury.dignity)) {
+    if (qualifies(mercury)) {
       reasons.push(`Mercury — ${mercury.dignity} — placed in the ${mercuryH}th house`);
-    } else if (mercury && mercury.dignity === 'friendly' && mercuryH === 9) {
-      reasons.push(`Mercury in the 9th house`);
     }
     if (['Gemini','Virgo'].includes(lagnaSign)) reasons.push(`${lagnaSign} Lagna`);
-    if (mercury && mercury.dignity === 'friendly' && mercuryH !== 9 && reasons.length === 0) {
-      reasons.push(`Mercury in the ${mercuryH}th house`);
-    }
     const indicator = reasons.length > 0 ? reasons.join(', ') : "the chart’s orientation toward wisdom and discernment";
     return `The chart's indicators — ${indicator} — point toward Jnana Yoga as a natural sadhana direction. Jnana Yoga is the path of knowledge and honest self-inquiry: the sustained, patient practice of distinguishing the real from the unreal, the consciousness that observes from the patterns it observes. For this chart, the practice of Svadhyaya — systematic self-reflection and the study of genuine wisdom texts — is the most naturally aligned foundational approach.`;
   }
 
   function buildBhaktiReason() {
     const reasons = [];
-    if (moon && ['own','exalted'].includes(moon.dignity)) reasons.push(`Moon — ${moon.dignity}`);
-    if (venus && ['own','exalted'].includes(venus.dignity)) reasons.push(`Venus — ${venus.dignity}`);
-    if (moonH === 12) reasons.push('Moon in the 12th house');
-    if (venusH === 12) reasons.push('Venus in the 12th house');
+    if (qualifies(moon))  reasons.push(`Moon — ${moon.dignity} — in the ${moonH}th house`);
+    if (qualifies(venus)) reasons.push(`Venus — ${venus.dignity} — in the ${venusH}th house`);
     if (['Cancer','Scorpio','Pisces'].includes(lagnaSign)) reasons.push(`${lagnaSign} Lagna (water element)`);
     const indicator = reasons.length > 0 ? reasons.join(', ') : "the chart’s sensitivity and orientation toward the subtle";
     return `The chart's indicators — ${indicator} — point toward Bhakti Yoga as a natural sadhana direction. Bhakti Yoga is the path of devotion: the complete offering of the self toward the source, dissolving the sense of separation through love rather than understanding. For this chart, the cultivation of genuine devotional practice — mantra, puja, or any form of heartfelt offering to what is genuinely sacred — is the most naturally aligned foundational approach.`;
@@ -610,10 +612,8 @@ function renderSadhanaMap(lagna, planets, planetHouses, dignityReport, currentDa
 
   function buildKarmaReason() {
     const reasons = [];
-    if (mars && ['own','exalted'].includes(mars.dignity)) reasons.push(`Mars — ${mars.dignity} — in the ${marsH}th house`);
-    if (saturn && ['own','exalted'].includes(saturn.dignity)) reasons.push(`Saturn — ${saturn.dignity} — in the ${saturnH}th house`);
-    if (marsH === 10) reasons.push('Mars occupying the 10th house');
-    if (saturnH === 10) reasons.push('Saturn occupying the 10th house');
+    if (qualifies(mars))   reasons.push(`Mars — ${mars.dignity} — in the ${marsH}th house`);
+    if (qualifies(saturn)) reasons.push(`Saturn — ${saturn.dignity} — in the ${saturnH}th house`);
     if (['Aries','Scorpio','Capricorn','Aquarius'].includes(lagnaSign)) reasons.push(`${lagnaSign} Lagna`);
     const indicator = reasons.length > 0 ? reasons.join(', ') : "the chart’s orientation toward disciplined purposeful action";
     return `The chart's indicators — ${indicator} — point toward Karma Yoga as a natural sadhana direction. Karma Yoga is the path of conscious action: acting fully and completely in whatever domain calls for action, without attachment to results, working as an instrument of Dharma rather than for personal gain. For this chart, the key practice is bringing genuine inner presence and non-attachment to the work and effort that the chart already indicates are central life themes.`;
@@ -621,7 +621,7 @@ function renderSadhanaMap(lagna, planets, planetHouses, dignityReport, currentDa
 
   function buildRajaReason() {
     const reasons = [];
-    if (saturn && ['own','exalted','friendly'].includes(saturn.dignity)) reasons.push(`Saturn — ${saturn.dignity} — in the ${saturnH}th house`);
+    if (qualifies(saturn)) reasons.push(`Saturn — ${saturn.dignity} — in the ${saturnH}th house`);
     if (['Capricorn','Aquarius','Virgo'].includes(lagnaSign)) reasons.push(`${lagnaSign} Lagna`);
     const indicator = reasons.length > 0 ? reasons.join(', ') : "the chart’s capacity for sustained inner discipline";
     return `The chart's indicators — ${indicator} — point toward Raja Yoga as a natural sadhana direction. Raja Yoga, as systematised by Patanjali in the Yoga Sutras, works directly with the mind and energy through the eight limbs of Ashtanga Yoga: from ethical conduct and personal discipline through to deep meditative absorption. For this chart, the regular practice of the foundational limbs — Surya Namaskar, Nadi Shodhana, Svadhyaya, and Pratyahara — is the most naturally aligned approach, with the deeper limbs developed under genuine guidance.`;
