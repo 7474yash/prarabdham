@@ -987,6 +987,60 @@ function setupRestart() {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Anonymous feedback box — EmailJS free tier, send-and-forget, nothing stored.
+// Setup required (site owner, one-time): create a free account at emailjs.com,
+// add an email service, create a template with one variable {{message}}, then
+// replace the three placeholder values below with your real Public Key,
+// Service ID, and Template ID.
+// ---------------------------------------------------------------------------
+
+const EMAILJS_PUBLIC_KEY  = 'qSxfIWL_6DfNcCUuw';   // replace with real Public Key
+const EMAILJS_SERVICE_ID  = 'service_bvewytp';   // replace with real Service ID
+const EMAILJS_TEMPLATE_ID = 'template_huv9p5p';  // replace with real Template ID
+
+function setupFeedbackBox() {
+  const sendBtn  = $('feedback-send');
+  const textarea = $('feedback-text');
+  const status   = $('feedback-status');
+  if (!sendBtn || !textarea) return;
+
+  sendBtn.addEventListener('click', async () => {
+    const message = textarea.value.trim();
+    if (!message) {
+      status.textContent = 'Please write something before sending.';
+      status.className = 'feedback-status err';
+      return;
+    }
+
+    if (EMAILJS_PUBLIC_KEY === 'EMAILJS_PUBLIC_KEY') {
+      // Placeholder values not yet replaced by site owner — fail gracefully.
+      status.textContent = 'Feedback is not yet configured on this site.';
+      status.className = 'feedback-status err';
+      return;
+    }
+
+    sendBtn.disabled = true;
+    status.textContent = 'Sending…';
+    status.className = 'feedback-status';
+
+    try {
+      if (window.emailjs && typeof window.emailjs.init === 'function') {
+        window.emailjs.init(EMAILJS_PUBLIC_KEY);
+      }
+      await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { message });
+      status.textContent = 'Thank you. Your feedback has been received.';
+      status.className = 'feedback-status ok';
+      textarea.value = '';
+    } catch (err) {
+      status.textContent = 'Unable to send at this time. Please try again later.';
+      status.className = 'feedback-status err';
+    } finally {
+      sendBtn.disabled = false;
+    }
+  });
+}
+
 
 // ---------------------------------------------------------------------------
 // Init
@@ -1002,6 +1056,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupAyanamsaNote();
   setupAdvancedToggle();
   setupRestart();
+  setupFeedbackBox();
 
   $('generate-btn').addEventListener('click', generateChart);
   $('f-date').addEventListener('keydown', e => { if (e.key === 'Enter') generateChart(); });
