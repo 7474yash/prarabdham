@@ -6,6 +6,8 @@
   <meta name="description" content="Generate your Vedic birth chart — free and precise."/>
   <title>Your Chart — Prarabdham</title>
   <link rel="stylesheet" href="css/main.css"/>
+  <!-- EmailJS — loaded on chart.html only, used for the anonymous feedback box -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -279,6 +281,16 @@
     <!-- 7474yash brand — visible on screen and in print -->
     <div id="report-brand" style="text-align:center;margin:1.5rem 0 .5rem;font-family:var(--font-mono);font-size:.78rem;color:#C9A84C;letter-spacing:.1em;">7474yash</div>
 
+    <!-- Anonymous feedback box — screen only, no name/email collected, nothing stored -->
+    <div class="feedback-box" id="feedback-box">
+      <div class="feedback-title">Feedback</div>
+      <textarea id="feedback-text" class="feedback-textarea" placeholder="Share your experience or feedback..." rows="4"></textarea>
+      <div class="feedback-row">
+        <button class="btn btn-ghost btn-sm" id="feedback-send">Send Feedback</button>
+        <span class="feedback-status" id="feedback-status"></span>
+      </div>
+    </div>
+
     <!-- Actions -->
     <div class="output-actions">
       <button class="btn btn-ghost btn-sm" id="pdf-btn">Download PDF</button>
@@ -294,6 +306,7 @@
   <div class="container">
     <p>Made with purpose, free forever.</p>
     <p style="font-size:.78rem;color:#C9A84C;margin-top:.3rem;font-family:var(--font-mono)">7474YASH</p>
+    <p id="visitor-count" style="font-size:.72rem;color:var(--text-3);margin-top:.2rem;font-family:var(--font-mono);"></p>
     <div class="footer-links">
       <a href="chart.html">Know Your Chart</a>
       <a href="index.html#what-is">What is Astrology</a>
@@ -302,6 +315,24 @@
     </div>
   </div>
 </footer>
+
+<script>
+  // Visitor counter — countapi.mileshilliard.com, a free community revival of
+  // the original countapi.xyz (which is now dead). No account/API key required.
+  // Honest note: this is a free community service with no SLA. If it becomes
+  // unavailable, the counter simply won't display. No user data is collected or
+  // stored by us — this only increments a public numeric counter.
+  fetch('https://countapi.mileshilliard.com/api/v1/hit/prarabdham_visits')
+    .then(r => r.json())
+    .then(data => {
+      const el = document.getElementById('visitor-count');
+      const val = data && (data.value !== undefined ? Number(data.value) : null);
+      if (el && val !== null && !isNaN(val)) {
+        el.textContent = `${val.toLocaleString()} seekers have visited`;
+      }
+    })
+    .catch(() => { /* fail silently — counter service unavailable */ });
+</script>
 
 <script type="module" src="js/main.js"></script>
 </body>

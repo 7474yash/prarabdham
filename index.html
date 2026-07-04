@@ -92,6 +92,7 @@
   <div class="container">
     <p>Made with purpose, free forever.</p>
     <p style="font-size:.78rem;color:#C9A84C;margin-top:.3rem;font-family:var(--font-mono)">7474YASH</p>
+    <p id="visitor-count" style="font-size:.72rem;color:var(--text-3);margin-top:.2rem;font-family:var(--font-mono);"></p>
     <div class="footer-links">
       <a href="chart.html">Know Your Chart</a>
       <a href="kundali-matching.html">Kundali Matching</a>
@@ -101,6 +102,24 @@
     </div>
   </div>
 </footer>
+
+<script>
+  // Visitor counter — countapi.mileshilliard.com, a free community revival of
+  // the original countapi.xyz (which is now dead). No account/API key required.
+  // Honest note: this is a free community service with no SLA. If it becomes
+  // unavailable, the counter simply won't display. No user data is collected or
+  // stored by us — this only increments a public numeric counter.
+  fetch('https://countapi.mileshilliard.com/api/v1/hit/prarabdham_visits')
+    .then(r => r.json())
+    .then(data => {
+      const el = document.getElementById('visitor-count');
+      const val = data && (data.value !== undefined ? Number(data.value) : null);
+      if (el && val !== null && !isNaN(val)) {
+        el.textContent = `${val.toLocaleString()} seekers have visited`;
+      }
+    })
+    .catch(() => { /* fail silently — counter service unavailable */ });
+</script>
 
 </body>
 </html>
