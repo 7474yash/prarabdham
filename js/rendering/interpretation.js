@@ -148,6 +148,49 @@ const HOUSE_DOMAIN = {
   11:'gains, networks, and the fulfilment of aspirations', 12:'liberation, solitude, and release',
 };
 
+// Synthesis sentences for common planet pairs sharing one house.
+// Order-independent lookup — key is "PlanetA+PlanetB" alphabetically sorted.
+const PAIR_SYNTHESIS = {
+  'Mercury+Saturn': "Mercury and Saturn together in one house produce a deep, careful, unhurried quality of intelligence — thought and speech here are deliberate rather than quick, built for durability rather than immediate impact, and the combination tends to earn credibility slowly through demonstrated substance rather than charm.",
+  'Jupiter+Mercury': "Mercury and Jupiter together in one house combine precise analytical skill with expansive wisdom, producing a genuine capacity to teach, explain, and make complex understanding accessible — the mind here is both sharp and generous.",
+  'Rahu+Sun': "Sun and Rahu together in one house intensify the drive for recognition and visibility considerably, producing strong ambition in this house's domain — the challenge is ensuring the amplified hunger for significance serves something genuinely worth being significant for.",
+  'Sun+Venus': "Sun and Venus together in one house blend the need for authentic self-expression with a genuine appreciation for beauty and relationship, often producing charisma, aesthetic sensibility, and a warmth that draws people in — the direction is ensuring this magnetism serves genuine connection rather than performance.",
+  'Saturn+Sun': "Sun and Saturn together in one house set the need for authentic self-expression directly against the demand for discipline and patience, often producing real friction early on that resolves into durable, earned authority as the person matures into Saturn's timeline rather than resisting it.",
+  'Moon+Rahu': "Moon and Rahu together in one house intensify emotional experience considerably — feelings in this house's domain tend to be amplified, sometimes restless or difficult to settle, and the sadhana direction is developing enough inner stillness that this intensity becomes depth rather than agitation.",
+  'Ketu+Moon': "Moon and Ketu together in one house bring a quality of emotional detachment or completion to this house's domain — feelings here may be harder to access consciously, or may carry an unusual, already-resolved quality, asking for gentle rather than forced engagement.",
+  'Mars+Saturn': "Mars and Saturn together in one house combine drive with discipline, often producing real friction between the impulse to act quickly and the demand to proceed carefully — when integrated consciously this pairing builds formidable, durable capability; when not, it produces frustration and stalled effort.",
+  'Jupiter+Mars': "Mars and Jupiter together in one house combine energy with wisdom, often producing the capacity to act decisively in service of genuinely principled goals — courage guided by purpose rather than reactive force.",
+  'Rahu+Saturn': "Rahu and Saturn together in one house combine amplified desire with the demand for patient discipline, often producing intense ambition that must be worked through slowly and honestly rather than seized quickly — a difficult but ultimately maturing combination when engaged consciously.",
+  'Saturn+Venus': "Saturn and Venus together in one house bring discipline and structure into the domain of beauty, pleasure, and relationship — this often produces relationships or aesthetic work that develop slowly and carry real substance and durability rather than immediate ease.",
+  'Sun+Mercury': "Sun and Mercury together in one house intensify the identity's need for clear, articulate self-expression — the personality tends to communicate with confidence, though Mercury's proximity to the Sun here often means the intellect can become close to identity itself, worth watching for over-identification with one's own opinions.",
+  'Mercury+Venus': "Mercury and Venus together in one house combine intelligence with aesthetic and relational sensitivity, often producing genuine skill in creative communication, diplomacy, or any work where precision and beauty need to meet.",
+  'Jupiter+Venus': "Jupiter and Venus together in one house combine wisdom with the appreciation of beauty and relationship, often producing genuine generosity, a refined sense of what is worth valuing, and real capacity for both creative and philosophical richness.",
+  'Mars+Venus': "Mars and Venus together in one house combine drive with relational and aesthetic sensitivity, often producing passionate creative or romantic expression — the direction is ensuring assertiveness and desire serve genuine connection rather than simply intensity for its own sake.",
+  'Mars+Mercury': "Mars and Mercury together in one house combine energy with intelligence, often producing sharp, quick, sometimes combative communication — the mind here moves fast and argues well, and the sadhana direction is precision without unnecessary force.",
+  'Jupiter+Saturn': "Jupiter and Saturn together in one house combine expansive wisdom with disciplined structure — a genuinely mature pairing when integrated, producing wisdom that has actually been earned through sustained practice rather than merely held as belief.",
+  'Ketu+Rahu': "Rahu and Ketu do not conjoin within a single house in the standard chart (they are always exactly opposite), so this pairing does not occur as a same-house synthesis.",
+  'Rahu+Venus': "Venus and Rahu together in one house amplify the desire for pleasure, relationship, and refined experience considerably — often producing real magnetism and charm, with the sadhana direction being ensuring the intensified appetite for beauty and connection serves genuine relationship rather than restless accumulation of experience.",
+};
+
+function pairKey(a, b) {
+  return [a, b].sort().join('+');
+}
+
+function buildSynthesis(occupants) {
+  if (occupants.length < 2) return null;
+  const sentences = [];
+  for (let i = 0; i < occupants.length; i++) {
+    for (let j = i + 1; j < occupants.length; j++) {
+      const key = pairKey(occupants[i], occupants[j]);
+      if (PAIR_SYNTHESIS[key]) sentences.push(PAIR_SYNTHESIS[key]);
+    }
+  }
+  if (sentences.length > 0) return sentences.join(' ');
+  // Fallback for pairs not in the lookup — still specific, names the planets
+  const names = occupants.join(' and ');
+  return `Together, ${names} in this house create a combined dynamic more layered than either alone — their individual qualities described above interact directly in this house's domain, and how consciously that interaction is met shapes whether it becomes friction or genuine strength.`;
+}
+
 export function buildHouseReading(houseNumber, sign, occupants, aspects, lordPlacement, planets = {}) {
   const parts = [];
   const lord = SIGN_LORD[sign];
@@ -163,6 +206,8 @@ export function buildHouseReading(houseNumber, sign, occupants, aspects, lordPla
         || `PLACEHOLDER: ${occ} in ${ordinal(houseNumber)} house content not yet written.`;
       parts.push(`${occ}${retro}${dignity} is placed here. ${pcontent}`);
     }
+    const synthesis = buildSynthesis(occupants);
+    if (synthesis) parts.push(synthesis);
     if (aspects.length > 0) {
       const aspNames = aspects.map(a => `${a.planet} (${a.aspectType} from H${a.fromHouse})`).join(', ');
       parts.push(`This house also receives the aspect of ${aspNames}.`);
