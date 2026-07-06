@@ -330,7 +330,86 @@ export function buildYogaReading(yogas) {
  * @param {object} planetHouses
  * @returns {string}
  */
-export function buildSummary(lagnaReading, houseReadings, dashaReading, lagna, planets, planetHouses, dignityReport = {}) {
+// Dignity lookup tables — mirrored here so this module can independently
+// assess dignity shifts inside divisional charts without depending on main.js.
+const D_EXALTATION = {Sun:'Aries',Moon:'Taurus',Mars:'Capricorn',Mercury:'Virgo',
+  Jupiter:'Cancer',Venus:'Pisces',Saturn:'Libra'};
+const D_OWN_SIGNS = {Sun:['Leo'],Moon:['Cancer'],Mars:['Aries','Scorpio'],
+  Mercury:['Gemini','Virgo'],Jupiter:['Sagittarius','Pisces'],
+  Venus:['Taurus','Libra'],Saturn:['Capricorn','Aquarius']};
+const D_DEBILITATION = {Sun:'Libra',Moon:'Scorpio',Mars:'Cancer',Mercury:'Pisces',
+  Jupiter:'Capricorn',Venus:'Virgo',Saturn:'Aries'};
+
+function vargaDignity(planet, sign) {
+  if (D_EXALTATION[planet] === sign) return 'exalted';
+  if ((D_OWN_SIGNS[planet] || []).includes(sign)) return 'own';
+  if (D_DEBILITATION[planet] === sign) return 'debilitated';
+  return null;
+}
+
+const MUKHYA_DOMAIN = {
+  D10: 'career and public contribution', D7: 'children and creative effort',
+  D12: 'ancestral inheritance and liberation', D24: 'education and learning',
+  D20: 'spiritual practice and devotion', D60: 'the overall karmic texture of the life',
+};
+
+/**
+ * Builds the D9 + other-Mukhya-Varga observation paragraph for the Summary.
+ * Returns null if no genuinely notable D9 condition exists (should be rare,
+ * since D9 Lagna is always present) — but never forces a fabricated
+ * observation for the "other chart" half if nothing stands out there.
+ */
+function buildVargaObservation(varga, lagna, planets, dignityReport, lagnaLord) {
+  if (!varga || !varga.D9) return null;
+
+  const PLANETS = ['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn'];
+  const d9Lagna = varga.D9.Lagna?.sign;
+  const d9LagnaLord = d9Lagna ? SIGN_LORD[d9Lagna] : null;
+
+  // Find the most significant D9 dignity condition (exalted takes priority over debilitated)
+  let d9Notable = null;
+  for (const p of PLANETS) {
+    const s = varga.D9[p]?.sign;
+    const dig = s ? vargaDignity(p, s) : null;
+    if (dig === 'exalted') { d9Notable = { planet: p, sign: s, dignity: dig }; break; }
+    if (dig === 'debilitated' && !d9Notable) d9Notable = { planet: p, sign: s, dignity: dig };
+  }
+
+  let d9Sentence;
+  if (d9LagnaLord === lagnaLord) {
+    d9Sentence = `In the Navamsa, the D9 Lagna lord is again ${lagnaLord} — the same planet governing the D1 Lagna — which reinforces ${lagnaLord}'s overall significance in this chart and suggests the soul's outward orientation and its deeper dharmic direction are genuinely aligned rather than working at cross purposes.`;
+  } else if (d9Notable) {
+    d9Sentence = d9Notable.dignity === 'exalted'
+      ? `In the Navamsa, ${d9Notable.planet} is exalted in ${d9Notable.sign} — suggesting real inner resilience and strength in whatever this planet governs, available to the native even when the D1 picture for this planet looks more ordinary.`
+      : `In the Navamsa, ${d9Notable.planet} is debilitated in ${d9Notable.sign} — suggesting a deeper layer of friction around what this planet governs, worth attending to even where the D1 placement seems untroubled.`;
+  } else {
+    d9Sentence = `The Navamsa Lagna falls in ${d9Lagna || 'a different sign from the D1 Lagna'}, giving a distinct but not sharply contrasting picture of the soul's deeper dharmic orientation.`;
+  }
+
+  // Check other Mukhya Varga charts for a genuinely notable condition
+  const OTHER_CHARTS = ['D10','D7','D12','D24','D20','D60'];
+  let otherSentence = '';
+  for (const key of OTHER_CHARTS) {
+    if (!varga[key]) continue;
+    for (const p of PLANETS) {
+      const s = varga[key][p]?.sign;
+      if (!s) continue;
+      const dig = vargaDignity(p, s);
+      if (dig === 'exalted' || dig === 'debilitated') {
+        const domain = MUKHYA_DOMAIN[key] || 'that chart\'s specific domain';
+        otherSentence = dig === 'exalted'
+          ? ` In ${key}, ${p} is exalted in ${s} — a genuinely strong condition for ${domain}.`
+          : ` In ${key}, ${p} is debilitated in ${s} — a specific point of friction worth noting in the domain of ${domain}.`;
+        break;
+      }
+    }
+    if (otherSentence) break;
+  }
+
+  return d9Sentence + otherSentence;
+}
+
+export function buildSummary(lagnaReading, houseReadings, dashaReading, lagna, planets, planetHouses, dignityReport = {}, varga = null) {
   const lagnaLord     = SIGN_LORD[lagna.sign];
   const lagnaLordSign = planets[lagnaLord]?.sign || '?';
   const lagnaLordH    = planetHouses[lagnaLord] || '?';
@@ -380,6 +459,11 @@ export function buildSummary(lagnaReading, houseReadings, dashaReading, lagna, p
   if (dashaLord) {
     const digWord = dashaLordDig ? ` (${dashaLordDig})` : '';
     summary += `Right now, the ${dashaLord} Dasha is active — with ${dashaLord}${digWord} sitting in the ${ordinal(dashaLordH)} house of this chart, this period is drawing attention squarely into that house's domain, activating themes the native may not otherwise have prioritised. `;
+  }
+
+  const vargaObs = buildVargaObservation(varga, lagna, planets, dignityReport, lagnaLord);
+  if (vargaObs) {
+    summary += `\n\n${vargaObs} `;
   }
 
   const closeSubject = standout
@@ -470,7 +554,7 @@ export function buildChartReport(chartData) {
   const yogaReadings = yogas ? buildYogaReading(yogas) : [];
 
   // ── Summary ──
-  const summary = buildSummary(lagnaReading, houseReadings, dashaReading, lagna, enrichedPlanets, planetHouses, dignityReport);
+  const summary = buildSummary(lagnaReading, houseReadings, dashaReading, lagna, enrichedPlanets, planetHouses, dignityReport, chartData.varga);
 
   return {
     lagnaReading,

@@ -857,7 +857,7 @@ async function generateChart() {
     // ── Step 8: Interpretation ──
     setLoadingMsg('Building interpretation…');
     const chartData = {
-      lagna, planets,
+      lagna, planets, varga,
       dashas: {
         current: { mahaDasha: currentDasha?.mahaDasha, antardasha, pratyantardasha },
         sequence: mahaDashas,
@@ -995,9 +995,9 @@ function setupRestart() {
 // Service ID, and Template ID.
 // ---------------------------------------------------------------------------
 
-const EMAILJS_PUBLIC_KEY  = 'qSxfIWL_6DfNcCUuw';   // replace with real Public Key
-const EMAILJS_SERVICE_ID  = 'service_bvewytp';   // replace with real Service ID
-const EMAILJS_TEMPLATE_ID = 'template_huv9p5p';  // replace with real Template ID
+const EMAILJS_PUBLIC_KEY  = 'EMAILJS_PUBLIC_KEY';   // replace with real Public Key
+const EMAILJS_SERVICE_ID  = 'EMAILJS_SERVICE_ID';   // replace with real Service ID
+const EMAILJS_TEMPLATE_ID = 'EMAILJS_TEMPLATE_ID';  // replace with real Template ID
 
 function setupFeedbackBox() {
   const sendBtn  = $('feedback-send');
