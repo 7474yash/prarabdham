@@ -268,6 +268,16 @@ export function buildDashaReading(currentDasha, planets = {}, planetHouses = {})
   }
   if (pd) {
     reading += ` Present sub-sub-period: ${pd.planet} (${pd.startDate} — ${pd.endDate}).`;
+
+    const pdSign  = planets[pd.planet]?.sign || '?';
+    const pdHouse = planetHouses[pd.planet] || '?';
+    const pdDig   = planets[pd.planet]?.dignity || '';
+    const pdCombust = planets[pd.planet]?.combust?.combust;
+
+    const combustPhrase = pdCombust ? `, combust in ${pdSign}` : ` in ${pdSign}`;
+    const digPhrase = pdDig ? ` (${pdDig})` : '';
+
+    reading += `\n\n${pd.planet} here sits${combustPhrase} in the ${ordinal(pdHouse)} house${digPhrase}, nested inside the ${mdPlanet} Mahadasha and ${ad.planet} Antardasha — three layers compounding at once. ${pdCombust ? `${pd.planet}'s combustion tends to dim its own natural authority right when this window asks it to be drawn on directly, producing a felt quality of effort that yields less clarity than the effort deserves.` : `This layering brings ${pd.planet}'s natal condition directly into focus for the duration of this specific window.`} The chart is asking for deliberate, chosen slowness through ${pd.startDate} to ${pd.endDate} rather than slowness forced by circumstance. The sadhana direction here is specific to this window: use it for quiet consolidation of what ${pd.planet} already governs, rather than for new ventures its current condition cannot yet fully support.`;
   }
 
   return reading;
@@ -459,6 +469,29 @@ export function buildSummary(lagnaReading, houseReadings, dashaReading, lagna, p
   if (dashaLord) {
     const digWord = dashaLordDig ? ` (${dashaLordDig})` : '';
     summary += `Right now, the ${dashaLord} Dasha is active — with ${dashaLord}${digWord} sitting in the ${ordinal(dashaLordH)} house of this chart, this period is drawing attention squarely into that house's domain, activating themes the native may not otherwise have prioritised. `;
+  }
+
+  // Central tension: a strong Kendra planet vs. a 3+ planet stellium elsewhere
+  const KENDRAS = [1,4,7,10];
+  let kendraStrong = null;
+  for (const name of PLANETS) {
+    const d = dignityReport[name];
+    if (d && KENDRAS.includes(planetHouses[name]) && (d.dignity === 'own' || d.dignity === 'exalted')) {
+      kendraStrong = { name, house: planetHouses[name] };
+      break;
+    }
+  }
+  const houseGroups = {};
+  for (const name of PLANETS) {
+    const h = planetHouses[name];
+    if (h) { houseGroups[h] = houseGroups[h] || []; houseGroups[h].push(name); }
+  }
+  let stellium = null;
+  for (const [h, names] of Object.entries(houseGroups)) {
+    if (names.length >= 3 && Number(h) !== kendraStrong?.house) { stellium = { house: h, names }; break; }
+  }
+  if (kendraStrong && stellium) {
+    summary += `${kendraStrong.name}'s outward, dignified push for standing in the ${ordinal(kendraStrong.house)} house sits alongside a ${ordinal(Number(stellium.house))} house stellium of ${stellium.names.join(', ')} pulling attention toward what is hidden or dissolving — both forces are likely felt at once, not as contradiction but as the chart's basic shape. `;
   }
 
   const vargaObs = buildVargaObservation(varga, lagna, planets, dignityReport, lagnaLord);
