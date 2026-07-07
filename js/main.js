@@ -299,7 +299,7 @@ function renderHouseList(houseReadings, planets) {
  * Generate written readings for D9 and other Mukhya Varga charts.
  * Uses varga data already computed by getAllVargaCharts().
  */
-function renderVargaReadings(varga, lagna, planets, planetHouses) {
+function renderVargaReadings(varga, lagna, planets, planetHouses, dignityReport) {
   const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo',
     'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
   const SIGN_LORD_MAP = {
@@ -387,7 +387,46 @@ function renderVargaReadings(varga, lagna, planets, planetHouses) {
 
   const d9LagnaDesc = D9_LAGNA_QUALITY[d9Lagna] || 'a specific dharmic orientation whose full quality is best assessed in context of the complete Navamsa chart';
 
-  const D9_READ = `The Navamsa — D9 — is the most important of the divisional charts. It reveals the soul's deeper nature, the quality of the dharmic life beneath the surface of the D1, and is traditionally read for themes of marriage, inner resilience, and the soul's direction of growth. In this chart, the Navamsa Lagna is ${d9Lagna} — indicating ${d9LagnaDesc}. The Navamsa Lagna lord ${d9LagnaLord} is placed in ${d9LagnaLordSign} in the Navamsa — the lord's placement shows how this dharmic orientation finds its most natural channel of expression. ${d9NotableSent} The D9 should always be read alongside the D1 — a planet that appears weak in the Rasi chart but is strong in the Navamsa often recovers significant strength in lived experience; the reverse is also true.`;
+  // 1. D9 vs D1 dignity contrast
+  const D1_D9_LABEL = {exalted:3, own:2, 'own sign':2, friendly:1, neutral:0, enemy:-1, debilitated:-2};
+  const D9_LABEL_MAP = {exalted:'exalted', 'own sign':'own sign', debilitated:'debilitated'};
+  let contrastSent = '';
+  const planets9 = ['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn'];
+  for (const p of planets9) {
+    const d1Dig = dignityReport?.[p]?.dignity;
+    const d9Sign = getPlanetSign('D9', p);
+    const d9Dig = vargaDignity(p, d9Sign);
+    if (!d1Dig || !d9Dig) continue;
+    const d1Score = D1_D9_LABEL[d1Dig] ?? 0;
+    const d9Score = D1_D9_LABEL[d9Dig] ?? 0;
+    if (Math.abs(d1Score - d9Score) >= 3) {
+      contrastSent += d9Score > d1Score
+        ? ` ${p} is ${d1Dig} in the D1 but ${d9Dig} in the Navamsa — a genuine contrast suggesting inner resources for what ${p} governs that are not immediately visible in outward circumstance.`
+        : ` ${p} is ${d1Dig} in the D1 but ${d9Dig} in the Navamsa — suggesting the outward expression of ${p} may not be fully sustained at the deeper dharmic level, worth working with consciously rather than assuming.`;
+    }
+  }
+
+  // 2. D9 7th house sign
+  const d9LagnaIdx = SIGNS.indexOf(d9Lagna);
+  const d9SeventhSign = d9LagnaIdx >= 0 ? SIGNS[(d9LagnaIdx + 6) % 12] : null;
+  const seventhSent = d9SeventhSign
+    ? ` The 7th house of the Navamsa — significant for partnership at the dharmic rather than merely practical level — falls in ${d9SeventhSign}, suggesting the native is oriented toward a partnership quality shaped by ${d9SeventhSign}'s nature at the level of soul commitment, not just daily compatibility.`
+    : '';
+
+  // 3. Atmakaraka — highest-degree planet in D1
+  let atmakaraka = null, maxDeg = -1;
+  for (const p of planets9) {
+    const deg = planets[p]?.degrees ?? -1;
+    if (deg > maxDeg) { maxDeg = deg; atmakaraka = p; }
+  }
+  const akD9Sign = atmakaraka ? getPlanetSign('D9', atmakaraka) : null;
+  const akSent = atmakaraka
+    ? ` ${atmakaraka}, the Atmakaraka — the planet at the highest degree in the D1 and the Jaimini significator of the soul itself — is placed in ${akD9Sign} in the Navamsa, indicating that the soul's deepest direction in this life is coloured by ${akD9Sign}'s specific quality.`
+    : '';
+
+  const D9_READ = `The Navamsa — D9 — is the most important of the divisional charts. It reveals the soul's deeper nature, the quality of the dharmic life beneath the surface of the D1, and is traditionally read for themes of marriage, inner resilience, and the soul's direction of growth. In this chart, the Navamsa Lagna is ${d9Lagna} — indicating ${d9LagnaDesc}. The Navamsa Lagna lord ${d9LagnaLord} is placed in ${d9LagnaLordSign} in the Navamsa — the lord's placement shows how this dharmic orientation finds its most natural channel of expression. ${d9NotableSent}${contrastSent}
+
+The D9 should always be read alongside the D1 — a planet that appears weak in the Rasi chart but is strong in the Navamsa often recovers significant strength in lived experience; the reverse is also true.${seventhSent}${akSent}`;
 
   // Other Mukhya Varga readings
   const d10Lagna = getVargaLagna('D10');
@@ -954,7 +993,7 @@ function renderOutput(data) {
 
   // Divisional chart readings
   if ($('varga-readings')) {
-    $('varga-readings').innerHTML = renderVargaReadings(varga, lagna, planets, planetHouses);
+    $('varga-readings').innerHTML = renderVargaReadings(varga, lagna, planets, planetHouses, dignityReport);
   }
 
   // Show output
