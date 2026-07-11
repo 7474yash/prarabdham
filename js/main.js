@@ -11,6 +11,7 @@ import { getFullDignityReport } from './calculations/dignity.js';
 import { getAllYogas, getHouseLords } from './calculations/yoga.js';
 import { buildChartReport } from './rendering/interpretation.js';
 import { renderChart } from './rendering/southindian.js';
+import { getFullAshtakavarga } from './calculations/ashtakavarga.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -479,6 +480,71 @@ The D9 should always be read alongside the D1 — a planet that appears weak in 
  * Identifies challenged planets and provides chart-specific parihara guidance.
  * Uses dignity.js output — debilitated, combust, or enemy+challenged = triggered.
  */
+// ---------------------------------------------------------------------------
+// Ashtakavarga Rendering
+// Uses the classical Parashara/B.V. Raman unreduced tables from ashtakavarga.js.
+// NOTE: Drik Panchang displays slightly different values for the same chart
+// because it follows the Varahamihira tradition (which differs on 2 contributor
+// rules). Both are valid classical traditions. Our values follow Parashara/Raman.
+// ---------------------------------------------------------------------------
+
+function renderAshtakavarga(planets, lagna) {
+  const av = getFullAshtakavarga(planets, lagna);
+  const { houseStrength } = av.sarva;
+
+  const ratingClass = { strong: 'pc', moderate: 'wc', weak: 'fc' };
+
+  const sarvaRows = houseStrength.map(h => `
+    <tr>
+      <td>H${h.house}</td>
+      <td>${h.sign}</td>
+      <td>${h.points}</td>
+      <td class="${ratingClass[h.rating]}">${h.rating}</td>
+    </tr>`).join('');
+
+  const sunByHouse = av.bhinna.Sun.byHouse;
+  const SIGNS_ARR = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo',
+    'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
+  const lagnaIdx = SIGNS_ARR.indexOf(lagna.sign);
+  const sunRows = sunByHouse.map((pts, i) => {
+    const sign = SIGNS_ARR[(lagnaIdx + i) % 12];
+    return `<tr><td>H${i+1}</td><td>${sign}</td><td>${pts}</td></tr>`;
+  }).join('');
+
+  return `
+    <div class="interp-block" style="margin-bottom:1.2rem">
+      <p>Ashtakavarga is a classical system that quantifies each house's overall planetary support. Each of the 7 planets and the Lagna casts benefic points across the 12 signs based on classical BPHS rules. Houses receiving 28 or more points are well-supported — planetary transits through them tend to produce stronger results. Houses receiving fewer than 20 points indicate areas that require more conscious effort. The total always equals 337, a fixed classical invariant that confirms the calculation's integrity.</p>
+    </div>
+
+    <div class="out-section-title" style="margin-bottom:.6rem;margin-top:1.2rem">Sarvashtakavarga — All 12 Houses</div>
+    <div class="planet-table-wrap">
+      <table class="planet-table">
+        <thead><tr><th>House</th><th>Sign</th><th>Points</th><th>Strength</th></tr></thead>
+        <tbody>${sarvaRows}</tbody>
+        <tfoot>
+          <tr><td colspan="2" style="color:var(--text-3);font-family:var(--font-mono);font-size:.75rem">Total</td>
+          <td style="color:var(--text-3);font-family:var(--font-mono);font-size:.75rem">${av.sarva.total}</td>
+          <td style="color:var(--text-3);font-family:var(--font-mono);font-size:.75rem">(classical invariant = 337)</td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="out-section-title" style="margin-bottom:.6rem;margin-top:1.5rem">Sun's Bhinnashtakavarga — Example Individual Table</div>
+    <div class="planet-table-wrap">
+      <table class="planet-table">
+        <thead><tr><th>House</th><th>Sign</th><th>Points (0–8)</th></tr></thead>
+        <tbody>${sunRows}</tbody>
+        <tfoot>
+          <tr><td colspan="2" style="color:var(--text-3);font-family:var(--font-mono);font-size:.75rem">Total</td>
+          <td style="color:var(--text-3);font-family:var(--font-mono);font-size:.75rem">${av.bhinna.Sun.total} (classical constant = 48)</td></tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="interp-block" style="margin-top:.75rem">
+      <p style="font-size:.82rem;color:var(--text-3);font-style:italic">Individual Bhinnashtakavarga tables for all 7 planets follow the same structure. The Sun's table is shown here as a representative example. For deeper study, each planet's table reveals which houses receive strong support from that planet's positioning — particularly useful for evaluating the quality of planetary Dasha periods and transits. Note: our values follow the classical Parashara tradition as standardised by B.V. Raman; Drik Panchang and other tools may show slightly different numbers if they follow the Varahamihira version, which differs on two specific contributor rules. Both are valid classical traditions.</p>
+    </div>`;
+}
+
 function renderPariharaSection(dignityReport, currentDasha, lagna, planets, planetHouses) {
   const PLANET_ORDER = ['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn','Rahu','Ketu'];
 
@@ -967,6 +1033,11 @@ function renderOutput(data) {
 
   // Yogas
   $('yoga-list').innerHTML = renderYogaList(report.yogaReadings);
+
+  // Ashtakavarga
+  if ($('ashtakavarga-content')) {
+    $('ashtakavarga-content').innerHTML = renderAshtakavarga(planets, lagna);
+  }
 
   // Interpretation sections
   $('interp-lagna').innerHTML   = renderText(report.lagnaReading);
