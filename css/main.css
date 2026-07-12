@@ -805,7 +805,7 @@ footer p { font-size: .85rem; color: var(--text-3); margin-bottom: .5rem; }
     margin: 0;
     size: A4 portrait;
   }
-  html, body { padding: 1.8cm 1.5cm !important; }
+  html, body { padding: 1.2cm 1.5cm !important; }
   html, body { background: #fff !important; color: #1a1a1a !important; font-size: 11pt; }
   * { color: inherit !important; background: transparent !important;
       border-color: #ccc !important; box-shadow: none !important; }
@@ -872,18 +872,20 @@ footer p { font-size: .85rem; color: var(--text-3); margin-bottom: .5rem; }
 
   /* Page breaks */
   .out-section { break-inside: avoid; margin-bottom: 1.2rem; }
-  #planet-table + .out-section,
-  .out-section:nth-child(4) { break-before: page; }
+  /* Remove forced page breaks that cause blank whitespace.
+     Only keep break-inside:avoid to prevent splitting mid-block. */
+  #planet-table + .out-section { break-before: auto; }
+  .out-section:nth-child(4) { break-before: auto; }
 
   /* Show advanced charts and varga readings in print */
   #advanced-charts { display: block !important; }
   #varga-readings-section { display: block !important; }
   #ashtakavarga-section { display: block !important; break-inside: avoid; }
   .interp-block { break-inside: avoid; }
+  .out-section { break-inside: avoid; margin-bottom: .75rem !important; }
 
-  /* Closing note — always last, distinct */
+  /* Closing note — no forced page break, flows naturally */
   .closing-note {
-    break-before: always !important;
     border: 1px solid #999 !important;
     border-top: 2px solid #555 !important;
     background: #f9f9f9 !important;
@@ -892,10 +894,11 @@ footer p { font-size: .85rem; color: var(--text-3); margin-bottom: .5rem; }
     color: #444 !important;
     font-style: italic;
     margin-top: 1rem !important;
+    break-inside: avoid;
   }
   .closing-note-label { color: #555 !important; font-style: normal; }
 
-  /* Front-matter — show in print, page break after */
+  /* Front-matter — keep page break after so report data starts fresh */
   .report-frontmatter {
     display: block !important;
     max-width: 100%;
