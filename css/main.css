@@ -651,6 +651,47 @@ footer p { font-size: .85rem; color: var(--text-3); margin-bottom: .5rem; }
   display: block;
 }
 
+/* Explore Further with Claude box */
+.explore-claude-box {
+  max-width: 680px;
+  margin: 1.5rem auto;
+  padding: 1.25rem 1.4rem;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold-dim);
+  border-radius: 0 var(--r-lg) var(--r-lg) 0;
+}
+.explore-claude-title {
+  font-family: var(--font-head);
+  font-size: 1rem;
+  color: var(--text);
+  margin-bottom: .6rem;
+}
+.explore-claude-note {
+  font-size: .85rem;
+  color: var(--text-2);
+  line-height: 1.7;
+  margin-bottom: .75rem;
+}
+.explore-claude-label {
+  font-size: .78rem;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  margin-bottom: .4rem;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+.explore-claude-prompt {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: .75rem 1rem;
+  font-family: var(--font-mono);
+  font-size: .82rem;
+  color: var(--text);
+  line-height: 1.65;
+}
+
 /* Anonymous feedback box */
 .feedback-box {
   max-width: 480px;
@@ -871,6 +912,26 @@ footer p { font-size: .85rem; color: var(--text-3); margin-bottom: .5rem; }
 
   /* Parihara and Sadhana sections — show in print */
   #parihara-section, #sadhana-section { display: block !important; break-inside: avoid; }
+  .explore-claude-box {
+    display: block !important;
+    max-width: 100%;
+    background: #f9f6ec !important;
+    border: 1px solid #ccc !important;
+    border-left: 3px solid #bbb !important;
+    break-inside: avoid;
+    margin: 1rem 0;
+    padding: 1rem !important;
+  }
+  .explore-claude-title { color: #1a1a1a !important; font-size: 11pt !important; }
+  .explore-claude-note  { color: #444 !important; font-size: 9pt !important; }
+  .explore-claude-label { color: #666 !important; font-size: 8pt !important; }
+  .explore-claude-prompt {
+    background: #fff !important;
+    border: 1px solid #ccc !important;
+    color: #1a1a1a !important;
+    font-size: 9pt !important;
+    padding: .5rem .75rem !important;
+  }
   #parihara-content .interp-block, #sadhana-content .interp-block { break-inside: avoid; }
 
   /* 7474yash brand — always visible in print */
