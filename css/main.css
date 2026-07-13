@@ -94,18 +94,19 @@ nav a:hover { color: var(--gold); text-decoration: none; }
 }
 .logo-main {
   font-family: var(--font-head);
-  font-size: clamp(4.5rem, 13vw, 10rem);
-  font-weight: 600;
-  letter-spacing: -.03em;
+  font-size: clamp(3.5rem, 10vw, 7rem);
+  font-weight: 500;
+  letter-spacing: -.02em;
   color: var(--text);
   line-height: 1;
   margin-bottom: .4rem;
+  text-shadow: 0 1px 18px rgba(201,168,76,0.08), 0 0 1px rgba(232,228,217,0.15);
 }
 .logo-sub {
   font-family: var(--font-body);
-  font-size: clamp(.72rem, 1.5vw, .88rem);
+  font-size: clamp(.85rem, 2vw, 1.05rem);
   color: var(--gold-dim);
-  letter-spacing: .28em;
+  letter-spacing: .25em;
   text-transform: uppercase;
   margin-bottom: 3rem;
   font-style: italic;
@@ -779,7 +780,7 @@ footer p { font-size: .85rem; color: var(--text-3); margin-bottom: .5rem; }
   .quick-info { gap: .5rem; }
 }
 @media (max-width: 480px) {
-  .logo-main { font-size: clamp(3rem, 15vw, 5rem); }
+  .logo-main { font-size: clamp(2.8rem, 15vw, 4rem); }
   .header-inner { flex-wrap: wrap; gap: .5rem; }
   nav { gap: .8rem; }
   .chart-grid { grid-template-columns: 1fr; }

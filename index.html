@@ -147,35 +147,45 @@
       const arrow = document.getElementById('scroll-arrow');
       if (!arrow) return;
 
+      // Only run on desktop
+      if (window.innerWidth < 768) return;
+
       function update() {
-        const scrollTop  = window.scrollY;
-        const docHeight  = document.documentElement.scrollHeight - window.innerHeight;
-        if (docHeight <= 0) return;
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight <= 0) { arrow.style.opacity = 0; return; }
 
-        const progress = scrollTop / docHeight; // 0 at top, 1 at bottom
+        const progress = Math.min(Math.max(scrollTop / docHeight, 0), 1);
 
-        // Only show after scrolling 5% to avoid immediate appearance at page top
-        if (progress < 0.05) { arrow.style.opacity = 0; return; }
-
-        // Position: top of viewport + progress fraction of viewport height (minus arrow height)
-        const vpH = window.innerHeight;
-        const arrowH = 60;
-        const topPos = Math.min(progress * (vpH - arrowH - 20) + 20, vpH - arrowH - 20);
-        arrow.style.top = topPos + 'px';
-
-        // Opacity: fade in from 5%-15% scroll, hold, fade out from 80%-100%
-        let opacity = 0.18;
+        // Fade in: 0→15% scroll. Hold: 15→80%. Fade out: 80→100%.
+        let opacity;
         if (progress < 0.15) {
-          opacity = 0.18 * ((progress - 0.05) / 0.10);
+          opacity = (progress / 0.15) * 0.18;
         } else if (progress > 0.80) {
-          opacity = 0.18 * (1 - (progress - 0.80) / 0.20);
+          opacity = ((1 - progress) / 0.20) * 0.18;
+        } else {
+          opacity = 0.18;
         }
+
+        // Travel: arrow tracks scroll from top-20% to bottom-80% of viewport
+        const vpH = window.innerHeight;
+        const topMin = vpH * 0.15;
+        const topMax = vpH * 0.75;
+        const topPos = topMin + progress * (topMax - topMin);
+
+        arrow.style.top = Math.round(topPos) + 'px';
         arrow.style.opacity = Math.max(0, opacity);
       }
 
       window.addEventListener('scroll', update, { passive: true });
-      window.addEventListener('resize', update, { passive: true });
-      update();
+      window.addEventListener('resize', function() {
+        if (window.innerWidth < 768) { arrow.style.opacity = 0; return; }
+        update();
+      }, { passive: true });
+
+      // Trigger once after page is fully loaded
+      if (document.readyState === 'complete') { update(); }
+      else { window.addEventListener('load', update); }
     })();
   </script>
 
