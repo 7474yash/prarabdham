@@ -20,9 +20,8 @@
     /* Scroll canvas — centered horizontally, full viewport height, pointer-events none */
     #scroll-canvas {
       position: fixed;
-      top: 0; left: 50%;
-      transform: translateX(-50%);
-      width: 120px; /* snake swings ~60px each side of center */
+      top: 0; right: 3.5rem;
+      width: 120px;
       height: 100vh;
       pointer-events: none;
       opacity: 0;
@@ -159,11 +158,11 @@
     // Ripple object — expands then fades
     function Ripple(x, y) {
       this.x = x; this.y = y;
-      this.r = 0; this.maxR = 28; this.alpha = 0.40;
+      this.r = 0; this.maxR = 32; this.alpha = 0.85;
     }
     Ripple.prototype.update = function() {
       this.r   += 0.8;
-      this.alpha = Math.max(0, 0.40 * (1 - this.r / this.maxR));
+      this.alpha = Math.max(0, 0.85 * (1 - this.r / this.maxR));
       return this.r < this.maxR;
     };
 
