@@ -17,18 +17,19 @@
     }
   </style>
   <style>
-    /* Scroll arrow — index.html only, hidden on mobile */
-    #scroll-arrow {
+    /* Scroll canvas — centered horizontally, full viewport height, pointer-events none */
+    #scroll-canvas {
       position: fixed;
-      right: 1.8rem;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 20px;
-      height: 56px;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 120px; /* snake swings ~60px each side of center */
+      height: 100vh;
       pointer-events: none;
+      opacity: 0;
       z-index: 10;
+      transition: opacity .6s ease;
     }
-    @media (max-width: 768px) { #scroll-arrow { display: none !important; } }
+    @media (max-width: 768px) { #scroll-canvas { display: none !important; } }
   </style>
 </head>
 <body>
@@ -136,46 +137,148 @@
 </script>
 
   <!-- Scroll-driven arrow — fixed right edge, dissolves near footer -->
-  <svg id="scroll-arrow" viewBox="0 0 20 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <line x1="10" y1="4" x2="10" y2="46" stroke="#C9A84C" stroke-width="1.2"/>
-    <polyline points="4,40 10,52 16,40" fill="none" stroke="#C9A84C" stroke-width="1.2" stroke-linejoin="round"/>
-  </svg>
+  <canvas id="scroll-canvas" aria-hidden="true"></canvas>
 
   <script>
-    (function() {
-      if (window.innerWidth < 768) return;
-      const arrow = document.getElementById('scroll-arrow');
-      if (!arrow) return;
+  (function() {
+    if (window.innerWidth < 768) return;
+    const canvas = document.getElementById('scroll-canvas');
+    if (!canvas) return;
 
-      // Start visible at low opacity, travel down, dissolve at bottom
-      arrow.style.opacity = '0.16';
+    const ctx = canvas.getContext('2d');
+    const GOLD = '#C9A84C';
+    let W, H, ripples = [], hasScrolled = false;
 
-      function update() {
-        const scrollTop = window.scrollY;
-        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    function resize() {
+      W = canvas.width  = canvas.offsetWidth;
+      H = canvas.height = canvas.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize, { passive: true });
 
-        // If page not scrollable, keep arrow gently visible
-        if (docHeight <= 50) { arrow.style.opacity = '0.16'; return; }
+    // Ripple object — expands then fades
+    function Ripple(x, y) {
+      this.x = x; this.y = y;
+      this.r = 0; this.maxR = 28; this.alpha = 0.40;
+    }
+    Ripple.prototype.update = function() {
+      this.r   += 0.8;
+      this.alpha = Math.max(0, 0.40 * (1 - this.r / this.maxR));
+      return this.r < this.maxR;
+    };
 
-        const progress = Math.min(scrollTop / docHeight, 1);
+    let rippleDone = false;
 
-        // Move from 20% to 80% of viewport vertically as user scrolls
-        const vpH = window.innerHeight;
-        const newTop = vpH * (0.20 + progress * 0.55);
-        arrow.style.top = 'auto';
-        arrow.style.transform = 'translateY(0)';
-        arrow.style.top = Math.round(newTop) + 'px';
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
 
-        // Dissolve in last 20% of scroll
-        const opacity = progress > 0.80
-          ? 0.16 * (1 - (progress - 0.80) / 0.20)
-          : 0.16;
-        arrow.style.opacity = Math.max(0, opacity);
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (!hasScrolled || docHeight <= 0) {
+        // Clear and wait
+        ctx.clearRect(0, 0, W, H);
+        requestAnimationFrame(draw);
+        return;
       }
 
-      window.addEventListener('scroll', update, { passive: true });
-      update();
-    })();
+      const progress = Math.min(scrollTop / docHeight, 1);
+
+      // Snake tip Y: travels from 8% to 88% of viewport
+      const tipY = H * (0.08 + progress * 0.80);
+
+      // Snake path — sinusoidal, amplitude ~55px (≈2 inches), one full wave over full scroll
+      const cx = W / 2;
+      const amp = 55;
+      const freq = 2.5; // waves visible in path
+      // Draw snake trail from top down to tipY
+      const steps = Math.max(2, Math.floor(tipY));
+
+      // Master opacity: fade in first 8%, full 8-80%, dissolve 80-100%
+      let masterAlpha;
+      if (progress < 0.08) masterAlpha = (progress / 0.08) * 0.40;
+      else if (progress > 0.80) masterAlpha = 0.40 * (1 - (progress - 0.80) / 0.20);
+      else masterAlpha = 0.40;
+
+      if (masterAlpha > 0) {
+        ctx.save();
+        ctx.globalAlpha = masterAlpha;
+        ctx.strokeStyle = GOLD;
+        ctx.lineWidth = 1.4;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.shadowColor = GOLD;
+        ctx.shadowBlur = 3;
+        ctx.beginPath();
+        for (let i = 0; i <= steps; i++) {
+          const t = i / H;
+          const x = cx + amp * Math.sin(freq * Math.PI * 2 * t);
+          const y = i;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // Arrowhead at tip
+        const t1 = (steps - 6) / H;
+        const t2 = steps / H;
+        const x1 = cx + amp * Math.sin(freq * Math.PI * 2 * t1);
+        const y1 = steps - 6;
+        const x2 = cx + amp * Math.sin(freq * Math.PI * 2 * t2);
+        const y2 = steps;
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        const aLen = 9;
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - aLen * Math.cos(angle - 0.45), y2 - aLen * Math.sin(angle - 0.45));
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - aLen * Math.cos(angle + 0.45), y2 - aLen * Math.sin(angle + 0.45));
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Trigger ripple when progress hits 0.80 and dissolving starts
+      if (progress >= 0.80 && !rippleDone) {
+        const tipX = cx + amp * Math.sin(freq * Math.PI * 2 * (tipY / H));
+        ripples.push(new Ripple(tipX, tipY));
+        rippleDone = true;
+      }
+      if (progress < 0.75) rippleDone = false; // reset if scrolled back up
+
+      // Draw ripples
+      ripples = ripples.filter(r => {
+        r.update();
+        if (r.alpha <= 0) return false;
+        ctx.save();
+        ctx.globalAlpha = r.alpha;
+        ctx.strokeStyle = GOLD;
+        ctx.lineWidth = 1;
+        // Inner ring
+        ctx.beginPath();
+        ctx.ellipse(r.x, r.y, r.r * 1.6, r.r * 0.45, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        // Outer ring slightly larger
+        if (r.r > 6) {
+          ctx.globalAlpha = r.alpha * 0.5;
+          ctx.beginPath();
+          ctx.ellipse(r.x, r.y, r.r * 2.4, r.r * 0.65, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+        return true;
+      });
+
+      requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('scroll', function() {
+      if (!hasScrolled) {
+        hasScrolled = true;
+        canvas.style.opacity = '1';
+      }
+    }, { passive: true });
+
+    requestAnimationFrame(draw);
+  })();
   </script>
 
 </body>
