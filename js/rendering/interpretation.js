@@ -209,11 +209,8 @@ export function buildHouseReading(houseNumber, sign, occupants, aspects, lordPla
     const synthesis = buildSynthesis(occupants);
     if (synthesis) parts.push(synthesis);
     if (aspects.length > 0) {
-      const aspClauses = aspects.map(a => {
-        const quality = ASPECT_QUALITY[a.planet] || `${a.planet}'s quality into`;
-        return `${a.planet}'s ${a.aspectType} from the ${ordinal(a.fromHouse)} house brings ${quality} ${HOUSE_DOMAIN[houseNumber] || 'this domain'}.`;
-      });
-      parts.push(`This house also receives aspects:\n${aspClauses.join('\n')}`);
+      const aspNames = aspects.map(a => `${a.planet} (${a.aspectType} from H${a.fromHouse})`).join(', ');
+      parts.push(`This house also receives the aspect of ${aspNames}.`);
     }
     return parts.join(' ');
   }
@@ -423,93 +420,228 @@ function buildVargaObservation(varga, lagna, planets, dignityReport, lagnaLord) 
 }
 
 export function buildSummary(lagnaReading, houseReadings, dashaReading, lagna, planets, planetHouses, dignityReport = {}, varga = null) {
+
+  // ── Core data extraction ──────────────────────────────────────────────────
+
   const lagnaLord     = SIGN_LORD[lagna.sign];
   const lagnaLordSign = planets[lagnaLord]?.sign || '?';
   const lagnaLordH    = planetHouses[lagnaLord] || '?';
   const lagnaLordDig  = dignityReport[lagnaLord]?.dignity || planets[lagnaLord]?.dignity || '';
 
   const dashaLordMatch = dashaReading.match(/Maha Dasha: (\w+)/);
-  const dashaLord = dashaLordMatch ? dashaLordMatch[1] : null;
-  const dashaLordH = dashaLord ? (planetHouses[dashaLord] || '?') : null;
+  const dashaLord    = dashaLordMatch ? dashaLordMatch[1] : null;
+  const dashaLordH   = dashaLord ? (planetHouses[dashaLord] || '?') : null;
   const dashaLordDig = dashaLord ? (dignityReport[dashaLord]?.dignity || planets[dashaLord]?.dignity || '') : '';
 
-  const PLANETS = ['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn','Rahu','Ketu'];
-  let standout = null;
-  for (const name of PLANETS) {
+  // Dignity-capable planets (Rahu/Ketu don't take classical dignity)
+  const DIGNITY_PLANETS = ['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn'];
+  const ALL_PLANETS     = ['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn','Rahu','Ketu'];
+
+  // Find strongest planet (exalted first, then own-sign)
+  let strongPlanet = null;
+  for (const name of DIGNITY_PLANETS) {
     const d = dignityReport[name];
-    if (d && (d.dignity === 'exalted' || d.dignity === 'own')) {
-      standout = { name, dignity: d.dignity, house: planetHouses[name], kind: 'strong' };
-      if (d.dignity === 'exalted') break;
-    }
+    if (d?.dignity === 'exalted') { strongPlanet = { name, dignity: 'exalted', house: planetHouses[name] }; break; }
   }
-  if (!standout) {
-    for (const name of PLANETS) {
+  if (!strongPlanet) {
+    for (const name of DIGNITY_PLANETS) {
       const d = dignityReport[name];
-      if (d && d.dignity === 'debilitated') {
-        standout = { name, dignity: d.dignity, house: planetHouses[name], kind: 'challenged' };
-        break;
-      }
+      if (d?.dignity === 'own') { strongPlanet = { name, dignity: 'own', house: planetHouses[name] }; break; }
     }
   }
 
-  const lordDigPhrase = lagnaLordDig
-    ? (lagnaLordDig === 'own' ? `comfortably placed in its own sign, ${lagnaLordSign}`
-      : lagnaLordDig === 'exalted' ? `exalted in ${lagnaLordSign}, its strongest possible position`
-      : lagnaLordDig === 'debilitated' ? `debilitated in ${lagnaLordSign}, asking for conscious effort where ease might otherwise be expected`
-      : `placed in ${lagnaLordSign}`)
-    : `placed in ${lagnaLordSign}`;
-
-  let summary = `${lagna.sign} rises in this chart, and its lord ${lagnaLord} is ${lordDigPhrase}, in the ${ordinal(lagnaLordH)} house — meaning the native's core orientation toward the world finds its most concrete outlet there. `;
-
-  if (standout) {
-    if (standout.kind === 'strong') {
-      summary += `The most notable strength in the chart is ${standout.name}, ${standout.dignity} in the ${ordinal(standout.house)} house — a placement that lends real, dependable capacity to whatever that house represents, and colours the chart's overall resilience. `;
-    } else {
-      summary += `The most significant point of friction is ${standout.name}, debilitated in the ${ordinal(standout.house)} house — not a flaw but the specific area this soul is being asked to work through consciously rather than avoid. `;
-    }
-  }
-
-  if (dashaLord) {
-    const digWord = dashaLordDig ? ` (${dashaLordDig})` : '';
-    summary += `Right now, the ${dashaLord} Dasha is active — with ${dashaLord}${digWord} sitting in the ${ordinal(dashaLordH)} house of this chart, this period is drawing attention squarely into that house's domain, activating themes the native may not otherwise have prioritised. `;
-  }
-
-  // Central tension: a strong Kendra planet vs. a 3+ planet stellium elsewhere
-  const KENDRAS = [1,4,7,10];
-  let kendraStrong = null;
-  for (const name of PLANETS) {
+  // Find most challenged planet (debilitated)
+  let weakPlanet = null;
+  for (const name of DIGNITY_PLANETS) {
     const d = dignityReport[name];
-    if (d && KENDRAS.includes(planetHouses[name]) && (d.dignity === 'own' || d.dignity === 'exalted')) {
-      kendraStrong = { name, house: planetHouses[name] };
-      break;
-    }
+    if (d?.dignity === 'debilitated') { weakPlanet = { name, house: planetHouses[name] }; break; }
   }
+
+  // Build house → occupants map
   const houseGroups = {};
-  for (const name of PLANETS) {
+  for (const name of ALL_PLANETS) {
     const h = planetHouses[name];
     if (h) { houseGroups[h] = houseGroups[h] || []; houseGroups[h].push(name); }
   }
-  let stellium = null;
-  for (const [h, names] of Object.entries(houseGroups)) {
-    if (names.length >= 3 && Number(h) !== kendraStrong?.house) { stellium = { house: h, names }; break; }
+
+  // ── Planet nature descriptors (short, for narrative embedding) ────────────
+
+  const PLANET_NATURE = {
+    Sun:     'the planet of authority and conscious self-expression',
+    Moon:    'the planet of emotional intelligence and inner nourishment',
+    Mars:    'the planet of drive, courage, and sustained effort',
+    Mercury: 'the planet of analytical intelligence and discernment',
+    Jupiter: 'the planet of wisdom, grace, and meaningful expansion',
+    Venus:   'the planet of refined experience, relationship, and aesthetic sense',
+    Saturn:  'the planet of discipline, patience, and what must be earned rather than assumed',
+    Rahu:    'the node of amplification and unfamiliar intensity',
+    Ketu:    'the node of detachment and spiritual depth',
+  };
+
+  // Short dignity descriptions for narrative use
+  const dignityNarrative = (dig, sign) => {
+    if (dig === 'exalted') return `exalted in ${sign} — at its strongest, bringing genuine and reliable capacity`;
+    if (dig === 'own')     return `in its own sign of ${sign} — comfortable and direct in its expression`;
+    if (dig === 'debilitated') return `debilitated in ${sign}, which means this planet's natural energy is not flowing easily`;
+    return `placed in ${sign}`;
+  };
+
+  // ── Paragraph 1 — Lagna + lord + strongest planet ────────────────────────
+
+  // What does the Lagna lord's house placement *mean* for how they meet the world?
+  const lagnaLordHDomain = HOUSE_DOMAIN[lagnaLordH] || 'this life domain';
+  const lagnaLordDigNarr = lagnaLordDig
+    ? dignityNarrative(lagnaLordDig, lagnaLordSign)
+    : `placed in ${lagnaLordSign}`;
+
+  // Describe what the lord's condition means for the Lagna's expression
+  let lordMeaning;
+  if (lagnaLordDig === 'exalted') {
+    lordMeaning = `With ${lagnaLord} ${lagnaLordDigNarr} in the ${ordinal(lagnaLordH)} house, the Lagna's energy finds a particularly clear and capable channel — the native's core orientation toward the world is not just present but genuinely supported, and ${lagnaLordHDomain} is where that orientation expresses itself most concretely and with least obstruction.`;
+  } else if (lagnaLordDig === 'own') {
+    lordMeaning = `With ${lagnaLord} ${lagnaLordDigNarr} in the ${ordinal(lagnaLordH)} house, the Lagna's fundamental character has a reliable outlet — the native's way of meeting the world can express itself naturally rather than having to push against conditions, and ${lagnaLordHDomain} is where this shows up most clearly in lived experience.`;
+  } else if (lagnaLordDig === 'debilitated') {
+    lordMeaning = `With ${lagnaLord} ${lagnaLordDigNarr} in the ${ordinal(lagnaLordH)} house, the Lagna's energy reaches the world through a more effortful channel than it might — the native's core orientation is present but finds resistance in ${lagnaLordHDomain}, which means that domain asks for conscious attention rather than assumed ease.`;
+  } else {
+    lordMeaning = `With ${lagnaLord} placed in ${lagnaLordSign} in the ${ordinal(lagnaLordH)} house, the Lagna's character finds its primary outlet in ${lagnaLordHDomain} — this is where the native's fundamental orientation toward the world shows up most directly in concrete experience.`;
   }
-  if (kendraStrong && stellium) {
-    summary += `${kendraStrong.name}'s outward, dignified push for standing in the ${ordinal(kendraStrong.house)} house sits alongside a ${ordinal(Number(stellium.house))} house stellium of ${stellium.names.join(', ')} pulling attention toward what is hidden or dissolving — both forces are likely felt at once, not as contradiction but as the chart's basic shape. `;
+
+  let p1 = `${lagna.sign} rises in this chart, shaping the native's fundamental way of meeting the world with ${lagna.sign} qualities — the disposition, the instinctive response, the way of carrying oneself. ${lordMeaning}`;
+
+  // Weave in the strongest planet — only if it is a different planet from the Lagna lord
+  // (if it IS the Lagna lord, it was already fully described above; repeating it reads as redundant)
+  if (strongPlanet && strongPlanet.name !== lagnaLord) {
+    const spNature   = PLANET_NATURE[strongPlanet.name] || strongPlanet.name;
+    const spDomain   = HOUSE_DOMAIN[strongPlanet.house] || 'its house domain';
+    const spDigWord  = strongPlanet.dignity === 'exalted' ? 'exalted' : 'in its own sign';
+    const spArticle  = spDigWord === 'exalted' ? 'An' : 'A';
+    const spConnects = (strongPlanet.house === lagnaLordH)
+      ? `, and the fact that it shares the ${ordinal(lagnaLordH)} house with the Lagna lord compounds this — both point to the same domain as the chart's most capable ground`
+      : `, which means the chart's overall picture carries a genuine resource in the domain of ${spDomain}`;
+    p1 += ` Running alongside this, ${strongPlanet.name} — ${spNature} — is ${spDigWord} in the ${ordinal(strongPlanet.house)} house${spConnects}. This is not a minor detail: ${spArticle.toLowerCase()} ${spDigWord} ${strongPlanet.name} lends real, dependable capacity to that house's themes and colours the chart's resilience wherever ${strongPlanet.name}'s influence reaches.`;
   }
+
+  // ── Paragraph 2 — Primary friction and how the chart itself addresses it ──
+
+  let p2 = '';
+  if (weakPlanet) {
+    const wpNature = PLANET_NATURE[weakPlanet.name] || weakPlanet.name;
+    const wpDomain = HOUSE_DOMAIN[weakPlanet.house] || 'its house domain';
+
+    // Find planets aspecting the weak planet's house
+    const aspectors = (houseReadings.find(r => r.houseNumber === weakPlanet.house)?.aspects || [])
+      .filter(a => a.planet !== weakPlanet.name);
+
+    // Find any co-occupants
+    const coOccupants = (houseGroups[weakPlanet.house] || []).filter(n => n !== weakPlanet.name);
+
+    p2 = `The chart's primary point of friction is ${weakPlanet.name} — ${wpNature} — debilitated in the ${ordinal(weakPlanet.house)} house. This is not a flaw in the chart or a punishment; it is the specific condition this soul is working through in this life, and it shows up most directly in ${wpDomain}. `;
+
+    if (aspectors.length > 0) {
+      const asp = aspectors[0];
+      const aspNature = PLANET_NATURE[asp.planet] || asp.planet;
+      const aspDig    = dignityReport[asp.planet]?.dignity || '';
+      const aspDigStr = aspDig ? ` (${aspDig})` : '';
+      p2 += `What the chart also shows, precisely because this reading requires honesty about resources as well as friction, is that ${asp.planet}${aspDigStr} — ${aspNature} — casts its ${asp.aspectType} onto this house from the ${ordinal(asp.fromHouse)}. That aspect does not erase the debilitation, but it means ${weakPlanet.name}'s domain is not without support — the qualities ${asp.planet} brings are available here, and consciously drawing on them is part of what this placement is asking for.`;
+    } else if (coOccupants.length > 0) {
+      const co = coOccupants[0];
+      const coNature = PLANET_NATURE[co] || co;
+      const coDig    = dignityReport[co]?.dignity || '';
+      const coDigStr = coDig ? ` (${coDig})` : '';
+      p2 += `The same house also holds ${co}${coDigStr} — ${coNature} — which means ${weakPlanet.name}'s debilitation does not operate in isolation. The two planets share the same domain, and how that combination is met — whether the friction is avoided or worked through directly — shapes the entire texture of ${wpDomain} in this life.`;
+    } else {
+      p2 += `The debilitation asks for conscious engagement with ${wpDomain} rather than avoidance — the pattern that tends to repeat in that domain is precisely the one this life is asking to be understood rather than escaped.`;
+    }
+  } else if (strongPlanet) {
+    // No debilitated planet — describe the chart's relative challenge differently
+    // Look for a planet in 6, 8, or 12 with no dignity
+    const DUSTHANAS = [6, 8, 12];
+    let dusthanaPlanet = null;
+    for (const name of DIGNITY_PLANETS) {
+      const h = planetHouses[name];
+      const dig = dignityReport[name]?.dignity;
+      if (h && DUSTHANAS.includes(h) && !dig) {
+        dusthanaPlanet = { name, house: h };
+        break;
+      }
+    }
+    if (dusthanaPlanet) {
+      const dpNature = PLANET_NATURE[dusthanaPlanet.name] || dusthanaPlanet.name;
+      const dpDomain = HOUSE_DOMAIN[dusthanaPlanet.house] || 'its house domain';
+      p2 = `There is no classically debilitated planet in this chart, which is itself significant — the chart's overall dignity picture is relatively supported. The place that asks the most from the native, however, is the ${ordinal(dusthanaPlanet.house)} house, where ${dusthanaPlanet.name} — ${dpNature} — sits without the support of dignity. The ${ordinal(dusthanaPlanet.house)} house governs ${dpDomain}, and ${dusthanaPlanet.name}'s presence there without special strength means that domain requires conscious effort rather than flowing easily. This is not obstruction — it is the chart's honest indication of where genuine work is needed rather than where ease can be assumed.`;
+    } else {
+      p2 = `There is no classically debilitated planet in this chart. The overall dignity picture is relatively well-supported, which means the chart's challenges tend to emerge from timing and choice rather than from a planet in fundamental difficulty. The areas that ask the most tend to be those where planets occupy the 6th, 8th, or 12th houses — domains that require conscious engagement regardless of a planet's dignity condition.`;
+    }
+  } else {
+    p2 = `This chart carries no planet at either extreme of dignity — no exalted, no debilitated. That in itself is meaningful: the chart's energies are relatively even, without a single dominant strength or a single sharp point of friction. What this tends to produce is a life where development is more gradual and less dramatic, where the work is distributed across multiple areas rather than concentrated, and where the quality of consistent attention over time matters more than any single placement.`;
+  }
+
+  // ── Paragraph 3 — Current Dasha moment ───────────────────────────────────
+
+  let p3 = '';
+  if (dashaLord) {
+    const dlNature  = PLANET_NATURE[dashaLord] || dashaLord;
+    const dlDomain  = HOUSE_DOMAIN[dashaLordH] || 'its house domain';
+    const dlDigNarr = dashaLordDig ? dignityNarrative(dashaLordDig, planets[dashaLord]?.sign || '?') : '';
+
+    // Does the Dasha lord connect to the strong planet, weak planet, or Lagna lord?
+    const connectsToStrong = strongPlanet && dashaLord === strongPlanet.name;
+    const connectsToWeak   = weakPlanet   && dashaLord === weakPlanet.name;
+    const connectsToLagna  = dashaLord    === lagnaLord;
+    const dashaInLagnaLordH = dashaLordH === lagnaLordH;
+
+    let connectionClause = '';
+    if (connectsToStrong) {
+      connectionClause = ` — and this is significant, because the period that is currently running belongs to the very planet identified above as the chart's primary strength. What that means in practice is that this is not a neutral window: the Dasha is activating the chart's most capable energy directly, and the themes of the ${ordinal(dashaLordH)} house are not background noise right now but the centre of what this period is asking to be built`;
+    } else if (connectsToWeak) {
+      connectionClause = ` — and this matters precisely because the Dasha lord is the same planet whose debilitation was described above. The period currently running is not adding a new theme; it is bringing the chart's primary friction directly to the surface. This is a window that asks for honest engagement with ${dlDomain} rather than avoidance, because the chart is, right now, making that the unavoidable territory`;
+    } else if (connectsToLagna) {
+      connectionClause = `, and since ${dashaLord} is also the lord of this Lagna, the current period is activating the native's most fundamental orientation directly — the themes of ${dlDomain} are not incidental to the Dasha but connected to the core of who this person is working to become`;
+    } else if (dashaInLagnaLordH) {
+      connectionClause = `. The Dasha lord occupies the same house as the Lagna lord, which means the current period is drawing attention into a domain that already carries the chart's primary outward orientation — the two themes are running together right now rather than separately`;
+    } else {
+      connectionClause = `. Whether the native has named it this way or not, the conditions of ${dlDomain} are not arbitrary right now — the chart is making that domain the active territory for this period, and the quality of engagement with it shapes what accumulates for the periods that follow`;
+    }
+
+    const dlDigClause = dlDigNarr ? ` (${dlDigNarr})` : '';
+    p3 = `The current Maha Dasha is ${dashaLord} — ${dlNature}${dlDigClause} — sitting in the ${ordinal(dashaLordH)} house and activating ${dlDomain}${connectionClause}.`;
+  }
+
+  // ── Paragraph 4 — D9 + other Varga + closing ─────────────────────────────
 
   const vargaObs = buildVargaObservation(varga, lagna, planets, dignityReport, lagnaLord);
-  if (vargaObs) {
-    summary += `\n\n${vargaObs} `;
+
+  // Closing sentence — specific to this chart's actual orientation, not a substituted template.
+  // It names what this Lagna + lord combination is oriented toward, then what the chart's
+  // primary condition (strength or friction) means for how that direction is walked.
+  const lagnaLordHDomainClose = HOUSE_DOMAIN[lagnaLordH] || 'its primary domain';
+  let closingSentence;
+  if (weakPlanet && strongPlanet) {
+    // Both a clear strength and a clear friction — the chart is asking to hold both
+    const wpDomainClose = HOUSE_DOMAIN[weakPlanet.house] || 'its domain';
+    const spDomainClose = HOUSE_DOMAIN[strongPlanet.house] || 'its domain';
+    closingSentence = `What this chart is ultimately asking for is a specific kind of honesty: to draw on the genuine capacity ${strongPlanet.name} makes available in the domain of ${spDomainClose}, while doing the actual work ${weakPlanet.name}'s debilitation is pointing toward in ${wpDomainClose} — not one or the other, but both together, which is precisely what ${lagna.sign} rising with ${lagnaLord} in the ${ordinal(lagnaLordH)} house asks of this particular life. The terrain is set. How it is walked remains entirely the native's own.`;
+  } else if (weakPlanet) {
+    // Friction dominant, no clear strong planet
+    const wpDomainClose = HOUSE_DOMAIN[weakPlanet.house] || 'its domain';
+    closingSentence = `What this chart is ultimately asking for is conscious engagement with ${wpDomainClose} — not avoidance of what ${weakPlanet.name}'s debilitation makes difficult, but the kind of honest, sustained attention that turns that difficulty into genuine understanding. That is the specific work ${lagna.sign} rising with ${lagnaLord} in the ${ordinal(lagnaLordH)} house has brought into this life. The terrain is set. How it is walked remains entirely the native's own.`;
+  } else if (strongPlanet) {
+    // Strength present, no debilitation — the chart asks to build from that ground
+    const spDomainClose = HOUSE_DOMAIN[strongPlanet.house] || 'its domain';
+    closingSentence = `What this chart is ultimately asking for is that the native build from the genuine ground ${strongPlanet.name} provides in ${spDomainClose} — not taking that capacity for granted, but using it as the foundation from which the rest of the chart's work becomes possible. That is the specific direction ${lagna.sign} rising with ${lagnaLord} in the ${ordinal(lagnaLordH)} house has oriented this life toward. The terrain is set. How it is walked remains entirely the native's own.`;
+  } else {
+    // Neither extreme — the chart asks for steady, distributed engagement
+    closingSentence = `What this chart is ultimately asking for is the kind of steady, honest attention that a chart without extremes requires — not the dramatic confrontation a debilitated planet demands, not the clear resource an exalted planet provides, but the more distributed work of meeting each domain on its own terms. That is the specific shape ${lagna.sign} rising with ${lagnaLord} in the ${ordinal(lagnaLordH)} house gives to this life. The terrain is set. How it is walked remains entirely the native's own.`;
   }
 
-  const closeSubject = standout
-    ? (standout.kind === 'strong'
-        ? `leaning on the genuine strength ${standout.name} offers while staying honest about where the rest of the chart still asks for effort`
-        : `meeting the friction around ${standout.name} directly rather than working around it`)
-    : `staying honest about which parts of the chart come easily and which ask for real effort`;
-  summary += `What this chart is ultimately asking for is ${closeSubject} — the terrain is set, but how it is walked remains entirely the native's own.`;
+  // ── Assemble ──────────────────────────────────────────────────────────────
 
-  return summary;
+  const paragraphs = [p1, p2];
+  if (p3) paragraphs.push(p3);
+  if (vargaObs) paragraphs.push(vargaObs);
+  paragraphs.push(closingSentence);
+
+  return paragraphs.join('\n\n');
 }
 
 // ---------------------------------------------------------------------------
