@@ -248,8 +248,8 @@ function renderPlanetTable(planets, planetHouses, dignityReport) {
     const comb    = dr.combust?.combust ? `<span class="combust-mark">yes ${dr.combust.degrees}°</span>` : '—';
     const h       = planetHouses[name] || '—';
     return `<tr>
-      <td>${name}</td>
-      <td>${p.sign}</td>
+      <td>${withSanskrit(name,'planet')}</td>
+      <td>${withSanskrit(p.sign,'sign')}</td>
       <td>${h}</td>
       <td style="font-family:var(--font-mono)">${deg}</td>
       <td><span class="${digCls}">${dig}</span></td>
@@ -274,17 +274,37 @@ function renderDashaTable(mahaDashas, currentDasha) {
   }).join('');
 }
 
+// Sanskrit/Telugu name lookup tables
+const PLANET_NAMES = {
+  Sun:'Surya', Moon:'Chandra', Mars:'Kuja', Mercury:'Budha',
+  Jupiter:'Guru', Venus:'Shukra', Saturn:'Shani', Rahu:'Rahu', Ketu:'Ketu'
+};
+const SIGN_NAMES = {
+  Aries:'Mesha', Taurus:'Vrishabha', Gemini:'Mithuna', Cancer:'Kataka',
+  Leo:'Simha', Virgo:'Kanya', Libra:'Tula', Scorpio:'Vrischika',
+  Sagittarius:'Dhanu', Capricorn:'Makara', Aquarius:'Kumbha', Pisces:'Meena'
+};
+// Wrap a name with its Sanskrit equivalent in smaller muted text
+function withSanskrit(name, type) {
+  const map = type === 'planet' ? PLANET_NAMES : SIGN_NAMES;
+  const sans = map[name];
+  if (!sans || sans === name) return name;
+  return `${name}<span style="font-size:.85em;opacity:.65;margin-left:.25em">(${sans})</span>`;
+}
+
 function renderHouseList(houseReadings, planets) {
   const ABBR = { Sun:'Su', Moon:'Mo', Mars:'Ma', Mercury:'Me', Jupiter:'Ju', Venus:'Ve', Saturn:'Sa', Rahu:'Ra', Ketu:'Ke' };
   return houseReadings.map(h => {
     const badges = h.occupants.map(o => {
       const retro = planets[o]?.isRetrograde;
-      return `<span class="hp-badge${retro?' retro':''}">${ABBR[o]||o}${retro?'℞':''}</span>`;
+      const sans = PLANET_NAMES[o];
+      const label = (ABBR[o]||o) + (sans && sans!==o ? `<span style="font-size:.78em;opacity:.6;margin-left:.2em">(${sans})</span>` : '');
+      return `<span class="hp-badge${retro?' retro':''}">${label}${retro?'℞':''}</span>`;
     }).join('');
     return `<div class="house-item">
       <div class="house-item-head">
         <span class="house-num-badge">H${h.houseNumber}</span>
-        <span class="house-sign-label">${h.sign}</span>
+        <span class="house-sign-label">${withSanskrit(h.sign,'sign')}</span>
         <div class="house-planets">${badges}</div>
       </div>
       <div class="house-item-body">${renderText(h.reading)}</div>
@@ -976,7 +996,7 @@ async function generateChart() {
     renderOutput({
       name, place, year, month, day, hour, minute, noTime, ayanamsa,
       lagna, planets, planetHouses, varga, mahaDashas, currentDasha,
-      antardasha, pratyantardasha, dignityReport, yogas, report,
+      antardasha, pratyantardasha, dignityReport, yogas, report, jdr,
     });
 
   } catch(err) {
@@ -995,7 +1015,7 @@ function renderOutput(data) {
   const {
     name, place, year, month, day, hour, minute, noTime, ayanamsa,
     lagna, planets, planetHouses, varga, mahaDashas, currentDasha,
-    antardasha, pratyantardasha, dignityReport, yogas, report,
+    antardasha, pratyantardasha, dignityReport, yogas, report, jdr,
   } = data;
 
   // Header
@@ -1004,17 +1024,60 @@ function renderOutput(data) {
   const timeStr = noTime ? '12:00 noon (approximate)' : `${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;
   $('out-details').textContent = `${months[month]} ${day}, ${year} · ${timeStr} · ${place.name.split(',').slice(0,2).join(',')} · ${ayanamsa.charAt(0).toUpperCase()+ayanamsa.slice(1)} Ayanamsa`;
 
-  // Quick info
+  // Quick info — expanded with all traditional fields
   const moon = planets.Moon;
   const md   = currentDasha?.mahaDasha;
-  $('quick-info').innerHTML = [
-    chip('Lagna',    lagna.sign),
-    chip('Moon',     moon?.sign || '—'),
-    chip('Nakshatra', lagna.nakshatra || '—'),
-    chip('Pada',     lagna.pada || '—'),
-    md ? chip('Maha Dasha', md.planet) : '',
-    antardasha ? chip('Antardasha', antardasha.planet) : '',
-  ].join('');
+
+  // Compute Janma Nakshatra (Moon's nakshatra) and Pada
+  const NAK_NAMES = ['Ashwini','Bharani','Krittika','Rohini','Mrigashira','Ardra',
+    'Punarvasu','Pushya','Ashlesha','Magha','Purva Phalguni','Uttara Phalguni',
+    'Hasta','Chitra','Swati','Vishakha','Anuradha','Jyeshtha',
+    'Mula','Purva Ashadha','Uttara Ashadha','Shravana','Dhanishtha','Shatabhisha',
+    'Purva Bhadrapada','Uttara Bhadrapada','Revati'];
+  const NAK_SPAN = 360 / 27;
+  const moonLon = ((moon?.longitude || 0) + 360) % 360;
+  const moonNakIdx = Math.floor(moonLon / NAK_SPAN);
+  const moonNakPada = Math.floor((moonLon % NAK_SPAN) / (NAK_SPAN / 4)) + 1;
+  const janmaNakshatra = NAK_NAMES[moonNakIdx] || '—';
+
+  // Weekday (Vara) from Julian Day
+  const WEEKDAYS = ['Sunday (Ravivara)','Monday (Somavara)','Tuesday (Mangalavara)',
+    'Wednesday (Budhavara)','Thursday (Guruvara)','Friday (Shukravara)','Saturday (Shanivara)'];
+  const wday = WEEKDAYS[Math.floor((jdr?.julianDay + 1.5) % 7)] || '—';
+
+  // Tithi — lunar day
+  const sunLon  = ((planets.Sun?.longitude || 0) + 360) % 360;
+  const tithiNum = Math.floor(((moonLon - sunLon + 360) % 360) / 12) + 1;
+  const PAKSHA = tithiNum <= 15 ? 'Shukla' : 'Krishna';
+  const tithiDay = tithiNum <= 15 ? tithiNum : tithiNum - 15;
+  const TITHI_NAMES = ['','Pratipada','Dwitiya','Tritiya','Chaturthi','Panchami',
+    'Shashthi','Saptami','Ashtami','Navami','Dashami','Ekadashi','Dwadashi',
+    'Trayodashi','Chaturdashi','Purnima / Amavasya'];
+  const tithiName = (TITHI_NAMES[tithiDay] || tithiDay) + ' ' + PAKSHA;
+
+  function qrow(label, value, prominent) {
+    return `<div class="qi-row${prominent ? ' qi-prominent' : ''}">
+      <span class="qi-label">${label}</span>
+      <span class="qi-value">${value}</span>
+    </div>`;
+  }
+
+  $('quick-info').innerHTML = `
+    <div class="qi-grid">
+      <div class="qi-col">
+        ${qrow('Lagna (Ascendant)', `${withSanskrit(lagna.sign,'sign')} ${lagna.degrees || ''}°${String(lagna.minutes||0).padStart(2,'0')}'`)}
+        ${qrow('Lagna Nakshatra', `${lagna.nakshatra || '—'} Pada ${lagna.pada || '—'}`)}
+        ${qrow('Janma Rasi (Moon Sign)', withSanskrit(moon?.sign || '—','sign'))}
+        ${qrow('Janma Nakshatra (Birth Star)', `${janmaNakshatra} Pada ${moonNakPada}`, true)}
+        ${qrow('Vara (Weekday)', wday)}
+        ${qrow('Tithi (Lunar Day)', tithiName)}
+      </div>
+      <div class="qi-col">
+        ${md ? qrow('Maha Dasha', `${withSanskrit(md.planet,'planet')} until ${md.endDate}`) : ''}
+        ${antardasha ? qrow('Antardasha', `${withSanskrit(antardasha.planet,'planet')} until ${antardasha.endDate}`) : ''}
+        ${pratyantardasha ? qrow('Pratyantardasha', `${withSanskrit(pratyantardasha.planet,'planet')}`) : ''}
+      </div>
+    </div>`;
 
   // Planet table
   $('planet-tbody').innerHTML = renderPlanetTable(planets, planetHouses, dignityReport);
