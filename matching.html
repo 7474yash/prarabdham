@@ -540,26 +540,26 @@ async function doMatch() {
 function buildMatchSummary(ak, dp) {
   // ── Find strengths: Ashta Koota factors at full or near-full score ──────────
   const ASHTA_MEANINGS = {
-    'Varna':    'a natural alignment in the quality and direction of each person\'s dharmic orientation',
-    'Vashya':   'a natural draw and mutual influence between these two — each tends to have a natural hold on the other\'s attention',
-    'Tara':     'a supportive karmic relationship between the birth stars — the nakshatra connection tends to feel familiar rather than foreign',
-    'Yoni':     'a fundamental compatibility in temperament and instinctive nature — the way each person moves through the world is not at odds',
-    'Graha Maitri': 'a genuine friendship between the Moon-sign lords — meaning the minds and thought-patterns of these two tend to support rather than oppose each other',
-    'Gana':     'a shared quality of nature — Deva, Manava, or Rakshasa — meaning both people approach life from a similar fundamental disposition',
-    'Bhakoot':  'a compatible Moon-sign relationship that generally supports emotional and material harmony over time',
-    'Nadi':     'constitutional diversity at the energetic level — the two natures complement rather than mirror each other',
+    'Varna':        'a natural alignment in the quality and direction of each person\'s dharmic orientation — how each person approaches duty and purpose tends to be compatible rather than at odds',
+    'Vashya':       'a natural draw and mutual influence between these two — each tends to have a genuine hold on the other\'s attention without having to work for it',
+    'Tara':         'a supportive relationship between the birth stars — the nakshatra connection tends to feel familiar and sustaining rather than foreign or unsettling',
+    'Yoni':         'a fundamental compatibility in temperament and instinctive nature — the way each person moves through the world is not at odds at a basic level',
+    'Graha Maitri': 'a genuine friendship between the lords of each person\'s Moon sign — meaning the minds and thought-patterns of these two tend to support rather than oppose each other naturally',
+    'Gana':         'a shared quality of nature — both people approach life from a similar fundamental disposition, which reduces friction in how they each instinctively respond to the world',
+    'Bhakoot':      'a compatible Moon-sign relationship that generally supports emotional and material harmony over time — this factor carries significant classical weight',
+    'Nadi':         'constitutional diversity at the energetic level — the two natures complement rather than mirror each other, which classical tradition considers beneficial',
   };
   const DASA_MEANINGS = {
-    'Dina':       'the birth-star relationship supports general wellbeing and a quality of mutual good fortune',
-    'Ganam':      'shared Gana means both people carry a similar fundamental disposition toward life',
-    'Mahendram':  'the Mahendra nakshatra position indicates a protective and sustaining quality in the relationship',
-    'Stree Dirgham': 'the Stree Dirgham position supports longevity and sustained wellbeing in partnership',
-    'Yoni':       'compatible Yoni indicates instinctive harmony in temperament and intimate nature',
-    'Rasyadhipathi': 'friendly Moon-sign lords mean the minds of these two people are naturally disposed toward each other',
-    'Rajju':      'different Rajju categories — the most significant single factor in South Indian matching — is strongly auspicious',
-    'Vedha':      'no Vedha obstruction is present between the birth stars',
-    'Varna':      'compatible Varna supports alignment in the quality and direction of each person\'s dharmic engagement',
-    'Vasya':      'Vasya compatibility supports mutual draw and natural influence between the two',
+    'Dina':          'the birth-star relationship supports a general quality of mutual wellbeing and good fortune between these two',
+    'Ganam':         'both people carry a similar fundamental disposition toward life — the way they each instinctively meet the world is aligned rather than opposed',
+    'Mahendram':     'the birth-star relationship carries a naturally protective and sustaining quality — each person tends to be a source of support and security for the other',
+    'Stree Dirgham': 'the birth-star distance falls in the auspicious range, which classical tradition associates with longevity and sustained wellbeing in partnership',
+    'Yoni':          'compatible instinctive temperament — how each person naturally moves through daily life and intimate experience is not at fundamental odds',
+    'Rasyadhipathi': 'friendly Moon-sign lords mean the minds and emotional orientations of these two people are naturally disposed toward each other rather than working against each other',
+    'Rajju':         'different Rajju categories — the single most weighted factor in South Indian matching — which is strongly auspicious; this factor alone carries more classical significance than several others combined',
+    'Vedha':         'no obstruction between the birth stars — the Vedha condition is absent, which means this specific classical caution does not apply to this pair',
+    'Varna':         'compatible Varna supports alignment in the quality and direction of each person\'s dharmic engagement — how each approaches purpose and duty tends to be naturally aligned',
+    'Vasya':         'a natural mutual draw and influence between these two — the connection does not need to be manufactured',
   };
 
   // Top ashta strengths: scored at max or within 1 point of max
@@ -586,6 +586,16 @@ function buildMatchSummary(ak, dp) {
     .sort((a,b) => (b.isCritical?1:0) - (a.isCritical?1:0))
     .slice(0, 2);
 
+  // ── Opening sentence — actual scores + what they indicate ──────────────────
+  const ashtaLevel = ak.total >= 24 ? 'a strong result — above the classical threshold of 24 where natural compatibility is considered well-supported'
+    : ak.total >= 18 ? 'a generally acceptable result — at or above the classical threshold of 18, indicating a workable foundation'
+    : ak.total >= 12 ? 'a below-threshold result — under the classical minimum of 18, meaning the natural karmic alignment in this system is weaker and will ask for more conscious effort'
+    : 'a significantly low result — well below the classical threshold, indicating that natural ease across most of these factors is not present and what compatibility exists here will need to be consciously built';
+  const dasaLevel = dp.passCount >= 7 ? 'a strong result in the South Indian system'
+    : dp.passCount >= 5 ? 'a moderate result in the South Indian system'
+    : 'a below-threshold result in the South Indian system, with more factors failing than passing';
+  const opening = `This combination scored ${ak.total} out of 36 in the North Indian system — ${ashtaLevel} — and ${dp.passCount} out of 10 in the South Indian system — ${dasaLevel}.`;
+
   // ── Paragraph 1 — Strengths ────────────────────────────────────────────────
   let p1 = '';
   const strengthSources = [
@@ -605,31 +615,31 @@ function buildMatchSummary(ak, dp) {
       p1 = `The strongest natural areas in this combination are ${s1.name}, ${s2.name}, and ${s3.name}. ${s1.name} generally suggests ${s1.meaning}; ${s2.name} points toward ${s2.meaning}; and ${s3.name} tends to indicate ${s3.meaning}. Where multiple factors align this way, there is usually a quality of genuine ease that is present from the beginning rather than built over time — a foundation that, when consciously recognised, becomes a real resource.`;
     }
   } else {
-    p1 = `This combination does not show strong scoring in any single Ashta Koota or Dasa Porutham factor. That is not the same as incompatibility — it means the ease these two bring to each other is more likely to emerge from conscious engagement than from natural karmic alignment. What the chart shows is terrain; what is built on it remains the work of the people.`;
+    p1 = `This combination does not show strong scoring in any single factor across either system. That is not the same as incompatibility — it means the ease these two bring to each other is more likely to emerge from conscious engagement than from natural karmic alignment. What the chart shows is terrain; what is built on it remains the work of the people.`;
   }
 
   // ── Paragraph 2 — Friction ─────────────────────────────────────────────────
   const ASHTA_FRICTION_MEANINGS = {
-    'Varna':    'a difference in the quality and direction of dharmic orientation — not opposition, but the need for genuine respect for each other\'s natural path',
-    'Vashya':   'a weaker natural draw — the connection tends to require more conscious cultivation rather than arising naturally',
-    'Tara':     'a birth-star relationship that asks for patience — the nakshatra connection may carry a quality of unfamiliarity that takes time to become ease',
-    'Yoni':     'a difference in instinctive nature and temperament — the way each moves through the world asks for conscious understanding rather than assumption',
-    'Graha Maitri': 'a tension between the Moon-sign lords — meaning the minds and thinking patterns of these two can work at cross purposes without deliberate bridging',
-    'Gana':     'a difference in fundamental disposition — one nature tends toward the quality the other is not naturally aligned with, which asks for genuine understanding across that difference',
-    'Bhakoot':  'a Moon-sign relationship that classically carries caution — particularly worth attending to consciously in the areas of emotional and material harmony',
-    'Nadi':     'the same Nadi for both — constitutionally similar in a way that classical texts treat with caution, particularly in the domains of health and progeny',
+    'Varna':        'a difference in the quality and direction of how each person approaches duty and purpose — not opposition, but a genuine difference that asks for respect rather than the assumption of alignment',
+    'Vashya':       'a weaker natural draw between these two — the connection tends to require more conscious cultivation rather than arising on its own',
+    'Tara':         'a birth-star relationship that asks for patience — the nakshatra connection may carry a quality of unfamiliarity that takes time and effort to become ease',
+    'Yoni':         'a difference in instinctive nature and temperament — the way each person moves through the world asks for conscious understanding rather than the assumption of shared instinct',
+    'Graha Maitri': 'a tension between the lords of each person\'s Moon sign — meaning the minds and thinking patterns of these two can work at cross purposes without deliberate, conscious bridging',
+    'Gana':         'a difference in fundamental disposition — one nature tends toward a quality the other is not naturally aligned with, which asks for genuine understanding across a real difference rather than smoothing it over',
+    'Bhakoot':      'a Moon-sign relationship that classically carries caution — this factor is worth attending to consciously, particularly in the areas of emotional and material harmony over time',
+    'Nadi':         'the same energetic constitution in both — constitutionally similar in a way that classical texts treat with caution, particularly in the domains of health and progeny',
   };
   const DASA_FRICTION_MEANINGS = {
-    'Dina':       'the birth-star relationship asks for conscious attention to mutual wellbeing — the natural Tara group interaction is not auspicious and benefits from deliberate care',
-    'Ganam':      'a difference in fundamental Gana disposition — this combination tends to ask for genuine understanding across a real difference in how each person naturally approaches life',
-    'Mahendram':  'the absence of Mahendra position asks for particular conscious effort in the areas of protection and sustained support',
-    'Stree Dirgham': 'the Stree Dirgham condition asks for attention — the birth-star distance does not fall in the auspicious range',
-    'Yoni':       'Yoni incompatibility asks for genuine conscious work in the domain of instinctive harmony and intimate temperament',
-    'Rasyadhipathi': 'neutral or enemy Moon-sign lords ask for conscious bridging — the thinking patterns and emotional orientations of these two do not naturally support each other without effort',
-    'Rajju':      'the same Rajju category — the single most significant caution in South Indian matching — asks for serious conscious attention; this is the factor classical texts treat with the most weight',
-    'Vedha':      'a Vedha obstruction between the birth stars is present — classically treated as one of the two most significant cautions alongside Rajju',
-    'Varna':      'Varna incompatibility asks for genuine respect for each person\'s different dharmic orientation rather than assuming alignment',
-    'Vasya':      'Vasya incompatibility asks for conscious cultivation of the mutual draw that does not arise as naturally in this combination',
+    'Dina':          'the birth-star relationship asks for conscious attention to mutual wellbeing — the natural interaction between these two stars does not fall in an auspicious grouping and benefits from deliberate care',
+    'Ganam':         'a genuine difference in fundamental disposition — how each person instinctively approaches life asks for real understanding rather than the assumption that both see the world the same way',
+    'Mahendram':     'an area where sustained mutual support and protection may need more conscious attention than it comes naturally — the birth-star relationship does not carry the natural sustaining quality this factor looks for',
+    'Stree Dirgham': 'the birth-star distance does not fall in the auspicious range — this asks for particular conscious attention to longevity and sustained wellbeing in the partnership',
+    'Yoni':          'a difference in instinctive temperament and intimate nature — this domain will ask for genuine understanding and patience rather than assumed harmony',
+    'Rasyadhipathi': 'the lords of each person\'s Moon sign are not in a friendly relationship — meaning the minds and emotional orientations of these two do not naturally support each other and will need conscious bridging',
+    'Rajju':         'both people fall in the same Rajju category — the single most significant caution in South Indian matching, and the one classical texts treat with the most weight; this asks for serious, honest conscious attention',
+    'Vedha':         'a specific birth-star obstruction is present between these two nakshatras — classically treated alongside Rajju as one of the two most significant cautions in South Indian matching',
+    'Varna':         'a difference in each person\'s dharmic orientation — this asks for genuine respect for how each person naturally approaches purpose and duty rather than assuming they are aligned',
+    'Vasya':         'a weaker natural mutual draw — the pull toward each other that some combinations carry naturally is not as present here and will need conscious cultivation',
   };
 
   let p2 = '';
@@ -647,13 +657,13 @@ function buildMatchSummary(ak, dp) {
       p2 = `The two areas this combination is being asked to work through most consciously are ${f1.name}${f1.critical ? ' ⚠' : ''} and ${f2.name}${f2.critical ? ' ⚠' : ''}. ${f1.name} generally suggests ${f1.meaning}. ${f2.name} points toward ${f2.meaning}. These are not verdicts on the relationship — they are the specific domains where both people will need to bring genuine understanding rather than assuming compatibility where the chart shows friction.`;
     }
   } else {
-    p2 = `This combination shows no major friction points across either the Ashta Koota or Dasa Porutham factors. That is genuinely significant — the terrain here is relatively unobstructed. The work that remains is not in navigating specific karmic friction but in consciously building on the natural ease the chart shows.`;
+    p2 = `This combination shows no major friction points across either system. That is genuinely significant — the terrain here is relatively unobstructed. The work that remains is not in navigating specific karmic friction but in consciously building on the natural ease the chart shows.`;
   }
 
   // ── Closing ────────────────────────────────────────────────────────────────
   const closing = `No matching score tells two people how to treat each other. What is shown here is the terrain — how it is walked is always their own.`;
 
-  return [p1, p2, closing].map(para => `<p>${para}</p>`).join('');
+  return [opening, p1, p2, closing].map(para => `<p>${para}</p>`).join('');
 }
 
 function renderResults(c1, c2, report, n1, n2, b1, b2) {
