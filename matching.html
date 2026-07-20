@@ -254,7 +254,7 @@
 
     <div class="out-section">
       <div class="out-title">Dasa Porutham — South Indian System (out of 10)</div>
-      <p style="font-size:.75rem;color:var(--text-3);margin-bottom:.75rem">Convention: Person 1 = Girl, Person 2 = Boy. Rajju ⚠ and Vedha ⚠ are more serious than other factors regardless of overall count.</p>
+      <p style="font-size:.75rem;color:var(--text-3);margin-bottom:.75rem">Person 1 and Person 2 are assessed across both directions where the factor is asymmetric. Rajju ⚠ and Vedha ⚠ are more serious than other factors regardless of overall count.</p>
       <table class="mf" id="dasa-table">
         <thead><tr><th>Porutham</th><th>Status</th><th>Notes</th></tr></thead>
         <tbody id="dasa-body"></tbody>
@@ -264,6 +264,11 @@
     <div class="out-section">
       <div class="out-title">Dosha Assessment</div>
       <div class="dosha-grid" id="dosha-grid"></div>
+    </div>
+
+    <div class="out-section" id="match-summary-section" style="display:none">
+      <div class="out-title">Compatibility Summary</div>
+      <div id="match-summary-body" class="interp-block"></div>
     </div>
 
     <!-- Educational content — hidden on screen (already on kundali-matching.html), shown in print only -->
@@ -341,7 +346,7 @@
       <div class="explore-claude-title">Want to explore your compatibility further on Claude.ai?</div>
       <p class="explore-claude-note">Before pasting this report to Claude.ai, confirm both persons' birth details — date, time, and place — are accurate. Even a small error in birth time affects house placements significantly. If either birth time is uncertain, mention that to Claude.ai at the start of the conversation.</p>
       <p class="explore-claude-label">Copy this prompt and paste it along with your report:</p>
-      <div class="explore-claude-prompt">"I have my Vedic birth chart from Prarabdham. Each placement in this report reflects karma to engage with consciously — not fate, not prediction. Walk me through what this chart is genuinely asking of me."</div>
+      <div class="explore-claude-prompt">"I have a kundali matching report from Prarabdham for two people. Each compatibility factor reflects karmic tendencies to work with consciously — not a verdict on whether this relationship will succeed. Help me understand what this combination is genuinely asking of both people."</div>
     </div>
 
     <div class="output-actions">
@@ -532,6 +537,125 @@ async function doMatch() {
   }
 }
 
+function buildMatchSummary(ak, dp) {
+  // ── Find strengths: Ashta Koota factors at full or near-full score ──────────
+  const ASHTA_MEANINGS = {
+    'Varna':    'a natural alignment in the quality and direction of each person\'s dharmic orientation',
+    'Vashya':   'a natural draw and mutual influence between these two — each tends to have a natural hold on the other\'s attention',
+    'Tara':     'a supportive karmic relationship between the birth stars — the nakshatra connection tends to feel familiar rather than foreign',
+    'Yoni':     'a fundamental compatibility in temperament and instinctive nature — the way each person moves through the world is not at odds',
+    'Graha Maitri': 'a genuine friendship between the Moon-sign lords — meaning the minds and thought-patterns of these two tend to support rather than oppose each other',
+    'Gana':     'a shared quality of nature — Deva, Manava, or Rakshasa — meaning both people approach life from a similar fundamental disposition',
+    'Bhakoot':  'a compatible Moon-sign relationship that generally supports emotional and material harmony over time',
+    'Nadi':     'constitutional diversity at the energetic level — the two natures complement rather than mirror each other',
+  };
+  const DASA_MEANINGS = {
+    'Dina':       'the birth-star relationship supports general wellbeing and a quality of mutual good fortune',
+    'Ganam':      'shared Gana means both people carry a similar fundamental disposition toward life',
+    'Mahendram':  'the Mahendra nakshatra position indicates a protective and sustaining quality in the relationship',
+    'Stree Dirgham': 'the Stree Dirgham position supports longevity and sustained wellbeing in partnership',
+    'Yoni':       'compatible Yoni indicates instinctive harmony in temperament and intimate nature',
+    'Rasyadhipathi': 'friendly Moon-sign lords mean the minds of these two people are naturally disposed toward each other',
+    'Rajju':      'different Rajju categories — the most significant single factor in South Indian matching — is strongly auspicious',
+    'Vedha':      'no Vedha obstruction is present between the birth stars',
+    'Varna':      'compatible Varna supports alignment in the quality and direction of each person\'s dharmic engagement',
+    'Vasya':      'Vasya compatibility supports mutual draw and natural influence between the two',
+  };
+
+  // Top ashta strengths: scored at max or within 1 point of max
+  const ashtaStrengths = ak.factors
+    .filter(f => f.scored >= f.max - 1 && f.max > 0)
+    .sort((a,b) => (b.scored/b.max) - (a.scored/a.max))
+    .slice(0, 3);
+
+  // Top dasa strengths: passed factors, non-critical first
+  const dasaStrengths = dp.factors
+    .filter(f => f.ok)
+    .filter(f => !f.isCritical)
+    .slice(0, 2);
+
+  // Ashta friction: scored 0 or below half
+  const ashtaFriction = ak.factors
+    .filter(f => f.scored < f.max / 2)
+    .sort((a,b) => (a.scored/a.max) - (b.scored/b.max))
+    .slice(0, 2);
+
+  // Dasa friction: failed factors, critical first
+  const dasaFriction = dp.factors
+    .filter(f => !f.ok)
+    .sort((a,b) => (b.isCritical?1:0) - (a.isCritical?1:0))
+    .slice(0, 2);
+
+  // ── Paragraph 1 — Strengths ────────────────────────────────────────────────
+  let p1 = '';
+  const strengthSources = [
+    ...ashtaStrengths.map(f => ({ name: f.name, meaning: ASHTA_MEANINGS[f.name] || f.explanation })),
+    ...dasaStrengths.map(f => ({ name: f.name, meaning: DASA_MEANINGS[f.name] || f.explanation })),
+  ].slice(0, 3);
+
+  if (strengthSources.length > 0) {
+    if (strengthSources.length === 1) {
+      const s = strengthSources[0];
+      p1 = `The clearest natural strength in this combination is ${s.name} — this generally suggests ${s.meaning}. Where this factor is strong, there tends to be a quality of ease that does not need to be manufactured or maintained by effort alone.`;
+    } else if (strengthSources.length === 2) {
+      const [s1, s2] = strengthSources;
+      p1 = `The most notable natural strengths in this combination are ${s1.name} and ${s2.name}. ${s1.name} generally suggests ${s1.meaning}; ${s2.name} points toward ${s2.meaning}. Together, this combination tends toward a quality of genuine ease in those areas — not manufactured compatibility but something more naturally present between these two.`;
+    } else {
+      const [s1, s2, s3] = strengthSources;
+      p1 = `The strongest natural areas in this combination are ${s1.name}, ${s2.name}, and ${s3.name}. ${s1.name} generally suggests ${s1.meaning}; ${s2.name} points toward ${s2.meaning}; and ${s3.name} tends to indicate ${s3.meaning}. Where multiple factors align this way, there is usually a quality of genuine ease that is present from the beginning rather than built over time — a foundation that, when consciously recognised, becomes a real resource.`;
+    }
+  } else {
+    p1 = `This combination does not show strong scoring in any single Ashta Koota or Dasa Porutham factor. That is not the same as incompatibility — it means the ease these two bring to each other is more likely to emerge from conscious engagement than from natural karmic alignment. What the chart shows is terrain; what is built on it remains the work of the people.`;
+  }
+
+  // ── Paragraph 2 — Friction ─────────────────────────────────────────────────
+  const ASHTA_FRICTION_MEANINGS = {
+    'Varna':    'a difference in the quality and direction of dharmic orientation — not opposition, but the need for genuine respect for each other\'s natural path',
+    'Vashya':   'a weaker natural draw — the connection tends to require more conscious cultivation rather than arising naturally',
+    'Tara':     'a birth-star relationship that asks for patience — the nakshatra connection may carry a quality of unfamiliarity that takes time to become ease',
+    'Yoni':     'a difference in instinctive nature and temperament — the way each moves through the world asks for conscious understanding rather than assumption',
+    'Graha Maitri': 'a tension between the Moon-sign lords — meaning the minds and thinking patterns of these two can work at cross purposes without deliberate bridging',
+    'Gana':     'a difference in fundamental disposition — one nature tends toward the quality the other is not naturally aligned with, which asks for genuine understanding across that difference',
+    'Bhakoot':  'a Moon-sign relationship that classically carries caution — particularly worth attending to consciously in the areas of emotional and material harmony',
+    'Nadi':     'the same Nadi for both — constitutionally similar in a way that classical texts treat with caution, particularly in the domains of health and progeny',
+  };
+  const DASA_FRICTION_MEANINGS = {
+    'Dina':       'the birth-star relationship asks for conscious attention to mutual wellbeing — the natural Tara group interaction is not auspicious and benefits from deliberate care',
+    'Ganam':      'a difference in fundamental Gana disposition — this combination tends to ask for genuine understanding across a real difference in how each person naturally approaches life',
+    'Mahendram':  'the absence of Mahendra position asks for particular conscious effort in the areas of protection and sustained support',
+    'Stree Dirgham': 'the Stree Dirgham condition asks for attention — the birth-star distance does not fall in the auspicious range',
+    'Yoni':       'Yoni incompatibility asks for genuine conscious work in the domain of instinctive harmony and intimate temperament',
+    'Rasyadhipathi': 'neutral or enemy Moon-sign lords ask for conscious bridging — the thinking patterns and emotional orientations of these two do not naturally support each other without effort',
+    'Rajju':      'the same Rajju category — the single most significant caution in South Indian matching — asks for serious conscious attention; this is the factor classical texts treat with the most weight',
+    'Vedha':      'a Vedha obstruction between the birth stars is present — classically treated as one of the two most significant cautions alongside Rajju',
+    'Varna':      'Varna incompatibility asks for genuine respect for each person\'s different dharmic orientation rather than assuming alignment',
+    'Vasya':      'Vasya incompatibility asks for conscious cultivation of the mutual draw that does not arise as naturally in this combination',
+  };
+
+  let p2 = '';
+  const frictionSources = [
+    ...dasaFriction.map(f => ({ name: f.name, meaning: DASA_FRICTION_MEANINGS[f.name] || f.explanation, critical: f.isCritical })),
+    ...ashtaFriction.map(f => ({ name: f.name, meaning: ASHTA_FRICTION_MEANINGS[f.name] || f.explanation, critical: false })),
+  ].slice(0, 2);
+
+  if (frictionSources.length > 0) {
+    if (frictionSources.length === 1) {
+      const f = frictionSources[0];
+      p2 = `The primary area this combination is being asked to work through consciously is ${f.name}${f.critical ? ' ⚠' : ''} — this generally suggests ${f.meaning}. This is not a reason to avoid the relationship; it is the specific territory where both people will need to bring genuine awareness rather than assuming ease.`;
+    } else {
+      const [f1, f2] = frictionSources;
+      p2 = `The two areas this combination is being asked to work through most consciously are ${f1.name}${f1.critical ? ' ⚠' : ''} and ${f2.name}${f2.critical ? ' ⚠' : ''}. ${f1.name} generally suggests ${f1.meaning}. ${f2.name} points toward ${f2.meaning}. These are not verdicts on the relationship — they are the specific domains where both people will need to bring genuine understanding rather than assuming compatibility where the chart shows friction.`;
+    }
+  } else {
+    p2 = `This combination shows no major friction points across either the Ashta Koota or Dasa Porutham factors. That is genuinely significant — the terrain here is relatively unobstructed. The work that remains is not in navigating specific karmic friction but in consciously building on the natural ease the chart shows.`;
+  }
+
+  // ── Closing ────────────────────────────────────────────────────────────────
+  const closing = `No matching score tells two people how to treat each other. What is shown here is the terrain — how it is walked is always their own.`;
+
+  return [p1, p2, closing].map(para => `<p>${para}</p>`).join('');
+}
+
 function renderResults(c1, c2, report, n1, n2, b1, b2) {
   const { ashtaKoota:ak, dasaPorutham:dp, mangalDosha:md, nadiDosha:nd } = report;
 
@@ -600,6 +724,14 @@ function renderResults(c1, c2, report, n1, n2, b1, b2) {
       <div class="dosha-title">Mangal Dosha — ${n2}</div>
       <div class="dosha-note">${md.person2.note}</div>
     </div>`;
+
+  // Compatibility Summary
+  const summarySection = $('match-summary-section');
+  const summaryBody    = $('match-summary-body');
+  if (summarySection && summaryBody) {
+    summaryBody.innerHTML = buildMatchSummary(ak, dp);
+    summarySection.style.display = '';
+  }
 
   $('match-loading').classList.remove('show');
   $('match-output').style.display='block';
