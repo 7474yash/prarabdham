@@ -209,8 +209,11 @@ export function buildHouseReading(houseNumber, sign, occupants, aspects, lordPla
     const synthesis = buildSynthesis(occupants);
     if (synthesis) parts.push(synthesis);
     if (aspects.length > 0) {
-      const aspNames = aspects.map(a => `${a.planet} (${a.aspectType} from H${a.fromHouse})`).join(', ');
-      parts.push(`This house also receives the aspect of ${aspNames}.`);
+      const aspClauses = aspects.map(a => {
+        const quality = ASPECT_QUALITY[a.planet] || `${a.planet}'s influence into`;
+        return `${a.planet}'s ${a.aspectType} from the ${ordinal(a.fromHouse)} house brings ${quality} ${HOUSE_DOMAIN[houseNumber] || 'this domain'}.`;
+      });
+      parts.push(`This house also receives aspects: ${aspClauses.join(' ')}`);
     }
     return parts.join(' ');
   }
