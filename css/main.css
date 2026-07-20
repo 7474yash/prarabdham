@@ -813,15 +813,71 @@ footer p { font-size: .85rem; color: var(--text-3); margin-bottom: .5rem; }
   .quick-info { gap: .5rem; }
 }
 @media (max-width: 480px) {
+  /* Base font — never smaller than 16px on mobile */
+  body { font-size: 16px; }
+
   .logo-main { font-size: clamp(2.8rem, 15vw, 4rem); }
   .header-inner { flex-wrap: wrap; gap: .5rem; }
   nav { gap: .8rem; }
   .chart-grid { grid-template-columns: 1fr; }
   .planet-table td, .planet-table th { padding: .4rem .5rem; font-size: .75rem; }
+
+  /* Safe-area padding for notched / curved screens */
+  .container,
+  .container-wide,
+  .header-inner,
+  .chart-page,
+  .content-page,
+  .matching-page {
+    padding-left:  max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  /* Prevent any element from overflowing viewport width */
+  * { max-width: 100vw; }
+  img, table, pre, code { max-width: 100%; }
+
+  /* Word wrap for long planet names or text in content areas */
+  .interp-block,
+  .house-item-body,
+  .summary-block,
+  .interp-section,
+  .closing-note,
+  .explore-claude-prompt,
+  p {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Chart grid — South Indian square — scrollable if wider than screen */
+  .chart-grid {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .chart-cell svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Planet table — already has overflow-x: auto on wrapper, confirm max-width */
+  .planet-table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+  }
 }
 
-/* ── Print / PDF ── */
-.print-footer-brand { display: none; }
+/* ── Mobile color vibrancy — ensure full saturation on all screens ── */
+@media (max-width: 480px) {
+  /* Force background and gold to full opacity — some mobile browsers
+     reduce color vibrancy on dark themes; explicitly restating ensures consistency */
+  body { background: #1a1625 !important; }
+  :root {
+    --bg:   #1a1625;
+    --gold: #C9A84C;
+  }
+  /* Remove the hero radial gradient on mobile — it can look muddy on small screens */
+  .hero::before { display: none; }
+}
 
 @media print {
   /* Hide everything except chart output */

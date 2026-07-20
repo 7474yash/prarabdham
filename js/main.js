@@ -242,6 +242,13 @@ function renderPlanetTable(planets, planetHouses, dignityReport) {
     const deg     = `${p.degrees}°${String(p.minutes).padStart(2,'0')}'`;
     const dig     = dr.dignity || '—';
     const digCls  = `dig-${dig.toLowerCase().replace(' ','-')}`;
+    const digDisplay = dig === 'exalted' ? 'Exalted (Ucha)'
+                     : dig === 'debilitated' ? 'Debilitated (Neecha)'
+                     : dig === 'own' ? 'Own sign'
+                     : dig === 'friendly' ? 'Friendly'
+                     : dig === 'neutral' ? 'Neutral'
+                     : dig === 'enemy' ? 'Enemy'
+                     : dig;
     const str     = dr.strength?.rating || '—';
     const strCls  = `strength-${str}`;
     const retro   = p.isRetrograde ? '<span class="retro-mark">℞</span>' : '—';
@@ -252,7 +259,7 @@ function renderPlanetTable(planets, planetHouses, dignityReport) {
       <td>${withSanskrit(p.sign,'sign')}</td>
       <td>${h}</td>
       <td style="font-family:var(--font-mono)">${deg}</td>
-      <td><span class="${digCls}">${dig}</span></td>
+      <td><span class="${digCls}">${digDisplay}</span></td>
       <td><span class="${strCls}">${str}</span></td>
       <td>${retro}</td>
       <td>${comb}</td>
