@@ -811,10 +811,10 @@ footer p { font-size: .85rem; color: var(--text-3); margin-bottom: .5rem; }
   background: transparent;
 }
 .purushartha-symbol {
-  width: 120px;
-  height: 120px;
+  width: 200px;
+  height: 200px;
   object-fit: contain;
-  opacity: 0.85;
+  opacity: 0.55;
 }
 
 /* ── Responsive ── */
@@ -833,10 +833,10 @@ footer p { font-size: .85rem; color: var(--text-3); margin-bottom: .5rem; }
   body { font-size: 16px; }
 
   /* Hero — reduced height so content is visible below fold */
-  .hero { min-height: 70vh; padding: 10vh 1.5rem 4vh !important; }
+  .hero { min-height: 60vh; padding: 10vh 1.5rem 4vh !important; }
 
   /* Purushartha symbol — smaller on mobile */
-  .purushartha-symbol { width: 90px; height: 90px; }
+  .purushartha-symbol { width: 140px; height: 140px; }
 
   .logo-main { font-size: clamp(2.8rem, 15vw, 4rem); }
   .header-inner { flex-wrap: wrap; gap: .5rem; }
