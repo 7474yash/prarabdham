@@ -38,7 +38,6 @@ const AYANAMSA_NOTES = {
   raman:       'Developed by B.V. Raman. Used in many South Indian traditions.',
   krishnamurti:'Used in Krishnamurti Paddhati (KP) system. Slightly different from Lahiri.',
   yukteshwar:  'From Sri Yukteshwar\'s Holy Science. Closer to Western sidereal.',
-  true_citra:  'Precise variant of Lahiri, aligns Chitra nakshatra star exactly.',
 };
 
 // ---------------------------------------------------------------------------
