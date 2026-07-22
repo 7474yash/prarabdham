@@ -21,9 +21,9 @@
  */
 
 // ─── Import SwissEph class from local copy ────────────────────────────────────
-// swisseph.js must exist at /js/lib/swisseph.js (downloaded from prolaxu repo)
-// CURRENT (wrong path):
-import SwissEph from 'https://cdn.jsdelivr.net/gh/prolaxu/swisseph-wasm@main/src/swisseph.js';
+// Using local js/wasm/swisseph.js — pinned build, mobile-compatible.
+// Do NOT switch back to CDN (prolaxu @main changes break mobile WASM instantiation).
+import SwissEph from '../wasm/swisseph.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -44,11 +44,10 @@ const SEFLG_SPEED   = 256; // Include speed for retrograde detection
 
 // Ayanamsa IDs
 const AYANAMSA_IDS = {
-  lahiri:            1,
-  raman:             3,
-  krishnamurti:      5,
-  yukteshwar:        7,
-  true_chitrapaksha: 27,
+  lahiri:       1,
+  raman:        3,
+  krishnamurti: 5,
+  yukteshwar:   7,
 };
 
 const ZODIAC_SIGNS = [
