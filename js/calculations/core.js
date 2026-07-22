@@ -9,9 +9,9 @@
  * See: https://www.astro.com/swisseph/swephinfo_e.htm#licen
  *
  * LOCAL BUILD API NOTE:
- * js/wasm/swisseph.js exports an async function: export default Swisseph
- * Usage: const swe = await Swisseph();
- * The returned module has all calculation methods directly on it.
+ * js/lib/swisseph.js is the prolaxu SwissEph wrapper class.
+ * Usage: const swe = new SwissEph(); await swe.initSwissEph();
+ * It wraps js/wasm/swisseph.js internally — do not import wasm directly.
  *
  * BROWSER COMPATIBILITY:
  *   - Requires ES Modules (all modern browsers since 2018)
@@ -20,11 +20,12 @@
  *   - Must be served over HTTP/HTTPS — not file:// protocol
  */
 
-// ─── Import SwissEph class from local copy ────────────────────────────────────
-// Using local js/wasm/swisseph.js — pinned build, mobile-compatible.
-// The local file exports an async FUNCTION called Swisseph (not a class).
-// Correct usage: const swe = await Swisseph(); — do NOT use 'new'.
-import Swisseph from '../wasm/swisseph.js';
+// ─── Import SwissEph wrapper from lib ────────────────────────────────────────
+// js/lib/swisseph.js is the prolaxu wrapper class — provides .julday(),
+// .calc_ut(), .houses() etc. It internally imports ../wasm/swisseph.js.
+// Do NOT import from wasm/swisseph.js directly — that is the raw Emscripten
+// build with no high-level API.
+import SwissEph from '../lib/swisseph.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -78,9 +79,8 @@ async function getSwe() {
   if (_swePromise)  return _swePromise;
 
   _swePromise = (async () => {
-    // Local wasm/swisseph.js exports an async function, not a class.
-    // Call it directly with await — it returns the fully initialised module.
-    const swe = await Swisseph();
+    const swe = new SwissEph();
+    await swe.initSwissEph();
     _sweInstance = swe;
     return swe;
   })();
