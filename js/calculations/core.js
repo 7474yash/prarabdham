@@ -8,10 +8,10 @@
  *   - Commercial license from Astrodienst AG (astro.com) for proprietary use
  * See: https://www.astro.com/swisseph/swephinfo_e.htm#licen
  *
- * LIBRARY API NOTE:
- * swisseph-wasm (prolaxu) is an ES module exporting a SwissEph CLASS.
- * Usage: const swe = new SwissEph(); await swe.initSwissEph();
- * All calculation methods are on the instance: swe.calc_ut(), swe.houses(), etc.
+ * LOCAL BUILD API NOTE:
+ * js/wasm/swisseph.js exports an async function: export default Swisseph
+ * Usage: const swe = await Swisseph();
+ * The returned module has all calculation methods directly on it.
  *
  * BROWSER COMPATIBILITY:
  *   - Requires ES Modules (all modern browsers since 2018)
@@ -22,8 +22,9 @@
 
 // ─── Import SwissEph class from local copy ────────────────────────────────────
 // Using local js/wasm/swisseph.js — pinned build, mobile-compatible.
-// Do NOT switch back to CDN (prolaxu @main changes break mobile WASM instantiation).
-import SwissEph from '../wasm/swisseph.js';
+// The local file exports an async FUNCTION called Swisseph (not a class).
+// Correct usage: const swe = await Swisseph(); — do NOT use 'new'.
+import Swisseph from '../wasm/swisseph.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -77,8 +78,9 @@ async function getSwe() {
   if (_swePromise)  return _swePromise;
 
   _swePromise = (async () => {
-    const swe = new SwissEph();
-    await swe.initSwissEph();
+    // Local wasm/swisseph.js exports an async function, not a class.
+    // Call it directly with await — it returns the fully initialised module.
+    const swe = await Swisseph();
     _sweInstance = swe;
     return swe;
   })();
