@@ -819,10 +819,10 @@ footer p { font-size: .85rem; color: var(--text-3); margin-bottom: .5rem; }
 
 /* ── Awareness Links ── */
 .awareness-links {
-  width: 100%;
-  max-width: 800px;
-  margin: 2rem auto;
-  padding: 1.5rem;
+  width: 80%;
+  max-width: 1100px;
+  margin: 1.5rem auto 0;
+  padding: 1.5rem 1rem;
   text-align: center;
 }
 .awareness-links h3 {
@@ -830,24 +830,30 @@ footer p { font-size: .85rem; color: var(--text-3); margin-bottom: .5rem; }
   letter-spacing: 0.15em;
   color: var(--text-3);
   text-transform: uppercase;
-  margin-bottom: 1rem;
+  margin-bottom: 1.2rem;
   font-family: var(--font-mono);
 }
 .awareness-pill {
   display: inline-block;
-  margin: 0.3rem;
-  padding: 0.4rem 1rem;
+  margin: 0.3rem 0.4rem;
+  padding: 0.55rem 1.5rem;
   border: 1px solid var(--gold);
   border-radius: 999px;
   color: var(--gold);
-  font-size: 13px;
+  font-size: 15px;
+  font-family: var(--font-head);
   text-decoration: none;
   background: transparent;
   transition: background 0.2s ease;
+  white-space: nowrap;
 }
 .awareness-pill:hover { background: rgba(201,168,76,0.1); }
+@media (max-width: 768px) {
+  .awareness-links { width: 95%; }
+  .awareness-pill { font-size: 14px; padding: 0.5rem 1.2rem; }
+}
 @media (max-width: 480px) {
-  .awareness-pill { font-size: 12px; padding: 0.35rem 0.8rem; }
+  .awareness-pill { font-size: 13px; padding: 0.4rem 0.9rem; }
 }
 
 /* ── Responsive ── */
