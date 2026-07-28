@@ -94,7 +94,7 @@ nav a:hover { color: var(--gold); text-decoration: none; }
 }
 .logo-main {
   font-family: var(--font-head);
-  font-size: clamp(5rem, 14vw, 10rem);
+  font-size: clamp(4rem, 12vw, 8.5rem);
   font-weight: 500;
   letter-spacing: -.02em;
   color: var(--text);
@@ -104,7 +104,7 @@ nav a:hover { color: var(--gold); text-decoration: none; }
 }
 .logo-sub {
   font-family: var(--font-body);
-  font-size: clamp(.85rem, 2vw, 1.05rem);
+  font-size: clamp(.95rem, 2.2vw, 1.2rem);
   color: var(--gold-dim);
   letter-spacing: .25em;
   text-transform: uppercase;
@@ -113,7 +113,7 @@ nav a:hover { color: var(--gold); text-decoration: none; }
 }
 .hero-tagline {
   font-family: var(--font-head);
-  font-size: clamp(1.15rem, 3vw, 1.55rem);
+  font-size: clamp(1.25rem, 3.2vw, 1.75rem);
   color: var(--text-2);
   max-width: 520px;
   margin: 0 auto 2.5rem;
