@@ -94,7 +94,7 @@ nav a:hover { color: var(--gold); text-decoration: none; }
 }
 .logo-main {
   font-family: var(--font-head);
-  font-size: clamp(3.5rem, 10vw, 7rem);
+  font-size: clamp(5rem, 14vw, 10rem);
   font-weight: 500;
   letter-spacing: -.02em;
   color: var(--text);
